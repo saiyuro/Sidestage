@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#140d26">
+<meta name="description" content="SideStage: a music discovery app for underrated artists.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SideStage">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="SideStage">
+<title>SideStage</title>
+<style>
+:root{--bg:#140d26;--bg2:#1d1436;--card:#231a40;--line:#38295e;--ink:#f4efff;--muted:#b9aed6;--accent:#a971ff;--accent2:#ffd9a0;--good:#38d6a8;--warn:#ffb86b;--danger:#ff7a8a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;background:radial-gradient(1000px 520px at 50% -180px,#3b1d7a 0%,var(--bg) 62%) no-repeat,var(--bg)}
+.shell{max-width:480px;margin:0 auto;min-height:100vh;padding-top:env(safe-area-inset-top);padding-right:16px;padding-bottom:calc(104px + env(safe-area-inset-bottom));padding-left:16px}
+header.top{display:flex;align-items:center;gap:10px;padding:16px 0 4px}
+.logo{font-weight:800;font-size:1.3rem;letter-spacing:-.3px}
+.logo b{color:var(--accent2);font-weight:800}
+.badge-demo{margin-left:auto;font-size:.72rem;color:var(--warn);border:1px solid #6b4b1f;border-radius:999px;padding:2px 8px}
+h1{font-size:1.5rem;margin:14px 0 4px}
+h2{font-size:1.15rem;margin:20px 0 8px}
+h3{font-size:1.05rem;margin:0}
+p{margin:.5em 0}
+.sub{font-size:.88rem;color:var(--muted)}
+.note{font-size:.82rem;color:var(--muted);margin:10px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+button.card{display:block;width:100%;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+.btn{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:10px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{min-height:34px;padding:6px 10px;font-size:.9rem}
+.btn.danger{background:#5a1f2c;color:#ffd6dc}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.block{width:100%}
+.link{background:none;border:0;color:var(--muted);font:inherit;font-size:.88rem;padding:6px 2px;cursor:pointer;text-decoration:underline}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.actions .btn{width:100%}
+label{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=url],select,textarea{width:100%;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.92rem;color:var(--ink);margin:12px 0}
+.check input{margin-top:4px;width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+@media (max-width:360px){.grid2{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.hscroll{display:flex;gap:8px;overflow-x:auto;padding:6px 16px;margin:6px -16px 0;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;white-space:nowrap;border:1px solid var(--line);background:var(--bg2);color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-size:.92rem;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.pill{display:inline-block;font-size:.75rem;border-radius:999px;background:var(--bg2);border:1px solid var(--line);color:var(--muted);padding:2px 9px;margin:2px 4px 2px 0}
+.badge{font-size:.72rem;border-radius:999px;padding:3px 9px;background:#17463a;color:var(--good);white-space:nowrap}
+.badge.muted{background:var(--bg2);color:var(--muted)}
+.status{font-size:.75rem;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.s-live{background:#17463a;color:var(--good)}
+.s-pending{background:#4a3a14;color:var(--warn)}
+.why{list-style:none;padding:0;margin:10px 0 0;font-size:.9rem;color:var(--muted)}
+.why li{padding:3px 0 3px 14px;position:relative}
+.why li::before{content:"\2022";position:absolute;left:2px;color:var(--accent)}
+.why .why-title{color:var(--ink);font-weight:600;padding-left:0}
+.why .why-title::before{content:none}
+.track{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg2);border-radius:12px;padding:10px 12px;margin-top:10px}
+.offer{margin-top:10px;font-size:.88rem;color:var(--accent2);background:#3a2a16;border-radius:10px;padding:8px 10px}
+.foot{display:flex;justify-content:space-between;margin-top:4px}
+.card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.empty{text-align:center;color:var(--muted);padding:34px 10px}
+.kv{list-style:none;padding:0;margin:0;font-size:.92rem}
+.kv li{padding:6px 0;border-bottom:1px solid var(--line)}
+.kv li:last-child{border-bottom:0}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:480px;background:rgba(20,13,38,.96);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));z-index:10}
+nav.bottom button{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;padding:10px 4px;border-radius:10px;cursor:pointer}
+nav.bottom button[aria-current=page]{color:var(--accent2);background:var(--bg2);font-weight:600}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{width:min(480px,100%);background:var(--bg2);border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);pointer-events:none;background:#2e2350;border:1px solid var(--line);color:var(--ink);padding:10px 14px;border-radius:12px;font-size:.9rem;z-index:30;width:max-content;max-width:90%;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+details.mod{margin-top:22px;border:1px dashed var(--line);border-radius:14px;padding:10px 14px}
+details.mod summary{cursor:pointer;color:var(--warn);font-weight:600}
+.steps{display:flex;gap:6px;margin:12px 0 2px}
+.steps span{flex:1;height:4px;border-radius:4px;background:var(--line)}
+.steps span.on{background:var(--accent)}
+.err{color:var(--danger);font-size:.9rem;margin:8px 0;min-height:1em}
+.stack{display:grid;gap:8px}
+.segmented{display:grid;grid-template-columns:1fr 1fr;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:4px;margin:14px 0 4px}
+.segmented button{border:0;background:none;color:var(--muted);font:inherit;padding:9px;border-radius:9px;cursor:pointer}
+.segmented button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600}
+.hero{text-align:center;padding:30px 0 6px}
+.mark{width:84px;height:84px;margin:0 auto 8px;display:block}
+.tagline{font-style:italic;color:var(--accent2);margin:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+'use strict';
+
+/* ---------- Configuration ---------- */
+const KEY = 'sidestage.prototype.v1';
+const GENRES = ['Bedroom Folk','Dream Pop','Shoegaze','Chamber Pop','Neo-Soul','Post-Punk','Indie Rock','Synthwave','Lo-fi','Ambient','Afrobeat','Jazz Fusion'];
+const PROVIDERS = {
+  spotify:    { name: 'Spotify',     url: q => 'https://open.spotify.com/search/' + encodeURIComponent(q) },
+  apple:      { name: 'Apple Music', url: q => 'https://music.apple.com/us/search?term=' + encodeURIComponent(q) },
+  soundcloud: { name: 'SoundCloud',  url: q => 'https://soundcloud.com/search?q=' + encodeURIComponent(q) },
+};
+const UNDER = 35;          // attention score below this counts as underrated (0 = none, 100 = very mainstream)
+const MAX_GENRES = 5, MAX_PICKS = 3;
+const PBKDF2_ITER = 150000;
+
+/* ---------- Sample catalog: all artists and songs are fictional ---------- */
+function A(id, name, city, genres, tags, bio, attention, verified, offer, tracks) {
+  return {
+    id, name, city, genres, tags, bio, attention, verified, ownerEmail: null, offer,
+    tracks: tracks.map(([title, seconds, seed], i) => ({ id: `${id}-t${i + 1}`, title, seconds, seed, status: 'live', previewUrl: null })),
+  };
+}
+const SEED = [
+  A('hollow-pines', 'Hollow Pines', 'Duluth, MN', ['Bedroom Folk','Dream Pop'], ['acoustic','nocturnal'], 'Two friends, one four-track recorder, and a porch in Duluth.', 18, true, 'Unreleased two-track B-side for anyone who saves three songs.', [['Porchlight Static',214,3],['Thin Ice Hymn',188,7]]),
+  A('velvet-harbor', 'Velvet Harbor', 'Halifax, NS', ['Dream Pop','Shoegaze'], ['hazy','nocturnal'], 'Guitars that sound like weather coming in off the water.', 26, true, null, [['Undertow Signal',240,11],['Glass Tide',201,5]]),
+  A('mira-solenne', 'Mira Solenne', 'Lisbon, PT', ['Chamber Pop','Neo-Soul'], ['intimate','hopeful'], 'Strings, a small choir, and a voice that does not need to be loud.', 9, false, null, [['Small Hours Choir',233,2]]),
+  A('quiet-engines', 'The Quiet Engines', 'Leeds, UK', ['Post-Punk','Indie Rock'], ['driving','angular'], 'Angular guitars and factory-floor drums.', 42, true, null, [['Factory Weather',197,9]]),
+  A('juniper-hale', 'Juniper Hale', 'Asheville, NC', ['Bedroom Folk','Chamber Pop'], ['acoustic','intimate'], 'Songs written on a bus and recorded in a closet.', 12, false, null, [['Paper Lanterns',175,4]]),
+  A('nightjar-club', 'Nightjar Club', 'Osaka, JP', ['Synthwave','Lo-fi'], ['nocturnal','driving'], 'Late-night synths for missed trains and long drives.', 33, true, 'Exclusive 8-bit remix pack for Shortlist savers.', [['Neon Mezzanine',246,13]]),
+  A('pale-atlas', 'Pale Atlas', 'Reykjavik, IS', ['Ambient','Shoegaze'], ['slow','vast'], 'Drones recorded near glaciers and rebuilt from field notes.', 5, false, null, [['Glacier Radio',301,1]]),
+  A('ojo-dorado', 'Ojo Dorado', 'Accra, GH', ['Afrobeat','Jazz Fusion'], ['rhythmic','hopeful'], 'Horns, polyrhythms, and a market-morning energy.', 21, true, null, [['Market Morning',219,6]]),
+  A('sable-and-sparrow', 'Sable & Sparrow', 'New Orleans, LA', ['Jazz Fusion','Neo-Soul'], ['warm','late-night'], 'Brass that sounds like it was played in the rain.', 28, true, null, [['Brass in the Rain',262,8]]),
+  A('kestrel-moon', 'Kestrel Moon', 'Denver, CO', ['Synthwave','Dream Pop'], ['hopeful','driving'], 'Big choruses and bright synths.', 61, true, null, [['Night Shift Sky',204,10]]),
+  A('tin-sparrow-riot', 'Tin Sparrow Riot', 'Detroit, MI', ['Indie Rock','Post-Punk'], ['loud','driving'], 'Loud, fast, and already on a lot of playlists.', 74, true, null, [['Overpass Anthem',189,12]]),
+  A('ada-brisk', 'Ada Brisk', 'Seoul, KR', ['Lo-fi','Ambient'], ['soft','nocturnal'], 'Rain-soundtrack beats for studying and sleeping.', 15, false, null, [['Rain on Tin Roofs',166,14]]),
+  A('harbor-and-heron', 'Harbor & Heron Collective', 'Portland, ME', ['Chamber Pop','Indie Rock'], ['orchestral','hopeful'], 'Eleven players, one tide chart, and a lot of brass-band warmth.', 31, true, null, [['Low Tide Arithmetic',252,15]]),
+  A('dune-tiller', 'Dune Tiller', 'Tucson, AZ', ['Shoegaze','Post-Punk'], ['hazy','driving'], 'Desert feedback loops and dry, steady drums.', 37, false, null, [['Mirage Feedback',221,16]]),
+];
+
+/* ---------- Persistence (this browser only; prototype) ---------- */
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (d && Array.isArray(d.artists)) return d;
+  } catch (e) { /* blocked or corrupt storage: start fresh */ }
+  return { users: {}, session: null, artists: JSON.parse(JSON.stringify(SEED)), claims: [], reports: [] };
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch (e) { toast('This browser is not saving data, so changes will be lost on refresh.'); }
+}
+let db = load();
+
+/* ---------- UI state (not saved) ---------- */
+const ui = {
+  authMode: 'signup', editing: false, onbStep: 1, draftGenres: [], draftArtists: [], draftProvider: 'spotify',
+  tab: 'discover', genreFilter: null, underratedOnly: false, previewId: null, reportTarget: null, claimTarget: null,
+};
+
+/* ---------- Helpers ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+const now = () => new Date().toISOString();
+const uid = p => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const me = () => (db.session && db.users[db.session]) || null;
+const artistById = id => db.artists.find(a => a.id === id) || null;
+const live = a => a.tracks.filter(t => t.status === 'live');
+const providerOf = u => PROVIDERS[u.taste.provider] || PROVIDERS.spotify;
+const providerOptions = sel => Object.entries(PROVIDERS).map(([k, p]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${p.name}</option>`).join('');
+const listenUrl = (p, a, t) => p.url(`${a.name} ${t.title}`);
+function trackById(id) {
+  for (const a of db.artists) { const t = a.tracks.find(x => x.id === id); if (t) return { a, t }; }
+  return null;
+}
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg; else toast(msg);
+}
+function downloadBlob(name, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ---------- Passwords: PBKDF2-SHA256 with a random salt ---------- */
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+const unhex = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
+const newSalt = () => hex(crypto.getRandomValues(new Uint8Array(16)));
+async function hashPw(pw, saltHex) {
+  if (!window.crypto || !crypto.subtle) throw new Error('This browser cannot secure passwords here. Open SideStage over https or localhost.');
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: unhex(saltHex), iterations: PBKDF2_ITER, hash: 'SHA-256' }, key, 256);
+  return hex(bits);
+}
+
+/* ---------- Recommendations: every score comes with reasons ---------- */
+function scoreArtist(a, u) {
+  const reasons = [];
+  let score = 0;
+  const hits = a.genres.filter(g => u.taste.genres[g]);
+  if (hits.length) {
+    score += hits.reduce((s, g) => s + u.taste.genres[g], 0);
+    reasons.push('Fits your interest in ' + hits.join(' and '));
+  }
+  for (const id of u.taste.artists) {
+    const f = artistById(id);
+    if (!f || f.id === a.id) continue;
+    const sg = a.genres.filter(g => f.genres.includes(g));
+    const st = a.tags.filter(t => f.tags.includes(t));
+    if (sg.length || st.length) {
+      score += 1.5 * sg.length + 0.75 * st.length;
+      reasons.push(`Shares ${[...sg, ...st].slice(0, 3).join(', ')} with ${f.name}, one of your picks`);
+    }
+  }
+  score += ((100 - a.attention) / 100) * 1.5;
+  if (a.attention < UNDER) reasons.push(`Underrated: attention score ${a.attention} of 100 (lower means less mainstream attention)`);
+  if (!reasons.length) reasons.push('New to you: nothing in your taste profile yet, so this is a wildcard pick');
+  return { score, reasons };
+}
+
+/* ---------- Preview: artist's authorized link if present, otherwise a generated tone ---------- */
+let audioCtx = null, htmlAudio = null, stopTimer = null;
+function stopPreview() {
+  clearTimeout(stopTimer); stopTimer = null;
+  if (htmlAudio) { htmlAudio.pause(); htmlAudio = null; }
+  if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
+  ui.previewId = null;
+}
+function togglePreview(trackId) {
+  const found = trackById(trackId);
+  if (!found) return;
+  const wasPlaying = ui.previewId === trackId;
+  stopPreview();
+  if (!wasPlaying) {
+    const t = found.t;
+    ui.previewId = trackId;
+    if (t.previewUrl) {
+      htmlAudio = new Audio(t.previewUrl);
+      htmlAudio.onended = () => { stopPreview(); render(); };
+      htmlAudio.play().catch(() => { stopPreview(); toast('That preview link could not be played.'); render(); });
+      stopTimer = setTimeout(() => { stopPreview(); render(); }, 30000);
+    } else {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { stopPreview(); toast('Previews are not supported in this browser.'); render(); return; }
+      audioCtx = new AC();
+      const base = 196 * Math.pow(2, (t.seed % 12) / 12);
+      const pattern = [0, 3, 5, 7, 10, 7, 5, 3];
+      const step = 0.3, len = Math.min(t.seconds, 15), t0 = audioCtx.currentTime + 0.05;
+      for (let i = 0; i < Math.floor(len / step); i++) {
+        const s = t0 + i * step;
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = base * Math.pow(2, pattern[(i + t.seed) % pattern.length] / 12);
+        g.gain.setValueAtTime(0.0001, s);
+        g.gain.exponentialRampToValueAtTime(0.18, s + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, s + step * 0.9);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(s); o.stop(s + step);
+      }
+      stopTimer = setTimeout(() => { stopPreview(); render(); }, len * 1000 + 200);
+      toast('Demo preview: a generated tone, not the artist’s recording.');
+    }
+  }
+  render();
+}
+
+/* ---------- Views ---------- */
+const MARK = `<svg class="mark" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="#1b0f33" stroke="#a971ff" stroke-width="3"/><path d="M40 26 L60 26 L78 80 L22 80 Z" fill="#a971ff" opacity=".22"/><rect x="40" y="18" width="20" height="6" rx="3" fill="#ffd9a0"/><circle cx="46" cy="60" r="7" fill="#ffd9a0"/><rect x="51" y="36" width="3.5" height="28" fill="#ffd9a0"/><rect x="28" y="80" width="44" height="5" rx="2.5" fill="#a971ff"/></svg>`;
+
+function viewAuth() {
+  const signup = ui.authMode === 'signup';
+  return `
+  <div class="hero">${MARK}<div class="logo" style="font-size:2rem">Side<b>Stage</b></div><p class="tagline">Where the underrated take center stage.</p></div>
+  <div class="segmented" role="group" aria-label="Account">
+    <button data-act="auth-mode" data-mode="signup" aria-pressed="${signup}">Create account</button>
+    <button data-act="auth-mode" data-mode="signin" aria-pressed="${!signup}">Sign in</button>
+  </div>
+  ${signup ? `
+  <form class="card" data-form="signup" novalidate>
+    <label for="su-name">Display name</label>
+    <input id="su-name" name="name" type="text" autocomplete="nickname" maxlength="40">
+    <label for="su-email">Email</label>
+    <input id="su-email" name="email" type="email" autocomplete="email">
+    <label for="su-pw">Password (8 or more characters)</label>
+    <input id="su-pw" name="password" type="password" autocomplete="new-password">
+    <label>I am a</label>
+    <div class="check"><label style="margin:0;color:var(--ink)"><input type="radio" name="role" value="listener" checked> Listener</label></div>
+    <div class="check"><label style="margin:0;color:var(--ink)"><input type="radio" name="role" value="artist"> Artist or band</label></div>
+    <div class="err" id="auth-err"></div>
+    <button class="btn block">Create account</button>
+    <p class="note">Prototype: your password is stored only on this device, as a slow salted hash.</p>
+  </form>` : `
+  <form class="card" data-form="signin" novalidate>
+    <label for="si-email">Email</label>
+    <input id="si-email" name="email" type="email" autocomplete="email">
+    <label for="si-pw">Password</label>
+    <input id="si-pw" name="password" type="password" autocomplete="current-password">
+    <div class="err" id="auth-err"></div>
+    <button class="btn block">Sign in</button>
+  </form>`}
+  <p class="note" style="text-align:center">Artists, songs and listens in this demo are fictional.</p>`;
+}
+
+function viewOnboarding() {
+  const skip = ui.editing ? 'Cancel' : 'Skip setup';
+  if (ui.onbStep === 1) {
+    return `
+    <div class="steps"><span class="on"></span><span></span></div>
+    <h1>What do you already like?</h1>
+    <p class="sub">Pick up to ${MAX_GENRES} genres. They are starting signals. You can change or remove them anytime in Me.</p>
+    <div class="chips">${GENRES.map(g => `<button class="chip" data-act="toggle-genre" data-g="${esc(g)}" aria-pressed="${ui.draftGenres.includes(g)}">${esc(g)}</button>`).join('')}</div>
+    <div class="row" style="margin-top:22px">
+      <button class="btn ghost" data-act="onb-skip">${skip}</button>
+      <button class="btn" style="flex:1" data-act="onb-next">Next</button>
+    </div>`;
+  }
+  return `
+    <div class="steps"><span class="on"></span><span class="on"></span></div>
+    <h1>Name up to ${MAX_PICKS} artists you love</h1>
+    <p class="sub">Optional. We use them to find similar, lesser-known artists. Each card says which pick it came from.</p>
+    <div class="stack" style="margin-top:12px">
+      ${db.artists.filter(a => live(a).length).map(a => {
+        const on = ui.draftArtists.includes(a.id);
+        return `<button class="card" style="margin:0;${on ? 'border-color:var(--accent)' : ''}" data-act="toggle-fav" data-id="${a.id}" aria-pressed="${on}">
+          <strong>${esc(a.name)}</strong><div class="sub">${esc(a.genres.join(', '))}</div></button>`;
+      }).join('')}
+    </div>
+    <label for="onb-prov">Service you already use</label>
+    <select id="onb-prov" data-act="draft-provider">${providerOptions(ui.draftProvider)}</select>
+    <div class="row" style="margin-top:18px">
+      <button class="btn ghost" data-act="onb-back">Back</button>
+      <button class="btn" style="flex:1" data-act="onb-finish">Finish</button>
+    </div>
+    <div style="text-align:center;margin-top:6px"><button class="link" data-act="onb-skip">${skip}</button></div>`;
+}
+
+function cardHTML(a, u, reasons) {
+  const t = live(a)[0];
+  const saved = u.saved.some(s => s.trackId === t.id);
+  const playing = ui.previewId === t.id;
+  const p = providerOf(u);
+  return `
+  <article class="card">
+    <div class="card-head">
+      <div><h3>${esc(a.name)}</h3><div class="sub">${esc(a.city)}${a.tags.length ? ' · ' + esc(a.tags.join(', ')) : ''}</div></div>
+      <span class="badge ${a.verified ? '' : 'muted'}">${a.verified ? 'Verified' : 'Unclaimed'}</span>
+    </div>
+    <div style="margin-top:8px">${a.genres.map(g => `<span class="pill">${esc(g)}</span>`).join('')}</div>
+    <ul class="why">
+      <li class="why-title">Why you're seeing this</li>
+      ${reasons.map(r => `<li>${esc(r)}</li>`).join('')}
+    </ul>
+    <div class="track">
+      <div><strong>${esc(t.title)}</strong><div class="sub">${fmt(t.seconds)}${t.previewUrl ? ' · artist preview' : ' · demo tone'}</div></div>
+      <button class="btn ghost small" data-act="preview" data-id="${t.id}">${playing ? '■ Stop' : '▶ Preview'}</button>
+    </div>
+    ${a.offer ? `<div class="offer">Artist offer: ${esc(a.offer)}</div>` : ''}
+    <div class="actions">
+      <button class="btn" data-act="save" data-id="${t.id}" ${saved ? 'disabled' : ''}>${saved ? 'Saved ✓' : '+ Save song'}</button>
+      <a class="btn ghost" href="${esc(listenUrl(p, a, t))}" target="_blank" rel="noopener">Listen on ${p.name}</a>
+    </div>
+    <div class="foot">
+      <button class="link" data-act="skip" data-artist="${a.id}">Not for me</button>
+      <button class="link" data-act="report-open" data-artist="${a.id}">Report</button>
+    </div>
+  </article>`;
+}
+
+function viewDiscover(u) {
+  const list = db.artists
+    .filter(a => live(a).length && a.ownerEmail !== u.email && !u.skipped.includes(a.id))
+    .filter(a => !ui.genreFilter || a.genres.includes(ui.genreFilter))
+    .filter(a => !ui.underratedOnly || a.attention < UNDER)
+    .map(a => ({ a, ...scoreArtist(a, u) }))
+    .sort((x, y) => (y.score - x.score) || (x.a.attention - y.a.attention));
+  const hasTaste = Object.keys(u.taste.genres).length + u.taste.artists.length > 0;
+  return `
+    <h1>Discover</h1>
+    <p class="sub">Lesser-known artists, each with the reasons it is here.</p>
+    ${installCardHTML()}
+    <div class="hscroll" role="group" aria-label="Genre filter">
+      <button class="chip" data-act="genre" data-g="" aria-pressed="${!ui.genreFilter}">All genres</button>
+      ${GENRES.map(g => `<button class="chip" data-act="genre" data-g="${esc(g)}" aria-pressed="${ui.genreFilter === g}">${esc(g)}</button>`).join('')}
+    </div>
+    <div class="row" style="margin:6px 0 0"><button class="chip" data-act="underrated" aria-pressed="${ui.underratedOnly}">Underrated only</button></div>
+    ${hasTaste ? '' : `<div class="card"><span class="sub"><strong style="color:var(--ink)">Tip:</strong> add genres or favorite artists in Me for closer matches. Until then, the most underrated picks come first.</span></div>`}
+    ${list.length ? list.map(x => cardHTML(x.a, u, x.reasons)).join('') : '<div class="empty">No artists match these filters. Try clearing one.</div>'}
+    <p class="note" style="text-align:center">Every ranking comes with its reasons. Change your taste anytime in Me.</p>`;
+}
+
+function listText() {
+  const u = me();
+  const lines = u.saved.map(s => { const f = trackById(s.trackId); return f ? `${f.a.name} — ${f.t.title} (${fmt(f.t.seconds)})` : null; }).filter(Boolean);
+  return ['SideStage Shortlist', '', ...lines].join('\n') + '\n';
+}
+function viewShortlist(u) {
+  const items = u.saved.map(s => trackById(s.trackId)).filter(Boolean);
+  return `
+    <h1>Shortlist</h1>
+    <p class="sub">${items.length} saved ${items.length === 1 ? 'song' : 'songs'}. Your list stays in SideStage. You choose where to listen.</p>
+    ${items.length ? `<div class="row" style="margin:10px 0"><button class="btn ghost small" data-act="copy-list">Copy list</button><button class="btn ghost small" data-act="download-list">Download .txt</button></div>` : ''}
+    ${items.length ? items.map(f => `
+      <article class="card">
+        <div class="card-head">
+          <div><strong>${esc(f.t.title)}</strong><div class="sub">${esc(f.a.name)} · ${fmt(f.t.seconds)}</div></div>
+          <button class="link" data-act="unsave" data-id="${f.t.id}">Remove</button>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" data-act="preview" data-id="${f.t.id}">${ui.previewId === f.t.id ? '■ Stop' : '▶ Preview'}</button>
+          <a class="btn ghost" href="${esc(listenUrl(providerOf(u), f.a, f.t))}" target="_blank" rel="noopener">Listen on ${providerOf(u).name}</a>
+        </div>
+      </article>`).join('')
+      : '<div class="empty">No saved songs yet.<br>Save songs from Discover to build your list.</div>'}`;
+}
+
+function claimFormHTML(a) {
+  return `
+  <div class="card">
+    <h3>Claim ${esc(a.name)}</h3>
+    <p class="sub">Claims are reviewed before the profile is verified. Only claim a profile you manage.</p>
+    <form data-form="claim" data-id="${a.id}" novalidate>
+      <label for="cl-name">Your name (artist or manager)</label>
+      <input id="cl-name" name="name" type="text" maxlength="80">
+      <label for="cl-link">Official link (website, label or verified social page; https only)</label>
+      <input id="cl-link" name="link" type="url" placeholder="https://">
+      <label class="check"><input type="checkbox" name="attest"> I am this artist or I am authorized to manage this profile.</label>
+      <div class="err" id="claim-err"></div>
+      <div class="row"><button type="button" class="btn ghost" data-act="claim-cancel">Cancel</button><button class="btn" style="flex:1">Submit claim</button></div>
+    </form>
+  </div>`;
+}
+function createFormHTML() {
+  return `
+  <form class="card" data-form="create" novalidate>
+    <label for="cp-name">Artist or band name</label>
+    <input id="cp-name" name="name" type="text" maxlength="60">
+    <label for="cp-city">City</label>
+    <input id="cp-city" name="city" type="text" maxlength="60">
+    <label>Genres (1 to 3)</label>
+    <div class="grid2">${GENRES.map(g => `<label class="check" style="margin:4px 0;color:var(--ink)"><input type="checkbox" name="genre" value="${esc(g)}"> ${esc(g)}</label>`).join('')}</div>
+    <label for="cp-bio">Short bio</label>
+    <textarea id="cp-bio" name="bio" maxlength="400"></textarea>
+    <label class="check"><input type="checkbox" name="attest"> I am this artist or I am authorized to represent them.</label>
+    <div class="err" id="create-err"></div>
+    <button class="btn block">Submit for review</button>
+  </form>`;
+}
+function viewStudio(a) {
+  return `
+    <h1>${esc(a.name)} ${a.verified ? '<span class="badge">Verified</span>' : ''}</h1>
+    <p class="sub">${esc(a.city)} · ${esc(a.genres.join(', '))}</p>
+    <h2>Your profile</h2>
+    <form class="card" data-form="profile">
+      <label for="pf-bio">Bio</label>
+      <textarea id="pf-bio" name="bio" maxlength="400">${esc(a.bio)}</textarea>
+      <label for="pf-offer">Optional fan offer (shown on your card)</label>
+      <input id="pf-offer" name="offer" type="text" maxlength="120" value="${esc(a.offer || '')}">
+      <div class="row" style="margin-top:12px"><button class="btn small">Save profile</button></div>
+    </form>
+    <h2>Submit a track</h2>
+    <form class="card" data-form="track" novalidate>
+      <label for="tr-title">Track title</label>
+      <input id="tr-title" name="title" type="text" maxlength="80">
+      <label for="tr-len">Length in seconds (30 to 900)</label>
+      <input id="tr-len" name="seconds" type="number" min="30" max="900">
+      <label for="tr-url">Preview link (optional; https only; a file you are allowed to share)</label>
+      <input id="tr-url" name="previewUrl" type="url" placeholder="https://">
+      <label class="check"><input type="checkbox" name="rights"> I own these recordings and publishing rights, or I have written permission to share them on SideStage.</label>
+      <div class="err" id="track-err"></div>
+      <button class="btn block">Submit for rights review</button>
+    </form>
+    <h2>Your tracks</h2>
+    ${a.tracks.length ? a.tracks.map(t => `
+      <div class="card"><div class="card-head">
+        <div><strong>${esc(t.title)}</strong><div class="sub">${fmt(t.seconds)}${t.previewUrl ? ' · preview link on file' : ''}</div></div>
+        <span class="status ${t.status === 'live' ? 's-live' : 's-pending'}">${t.status === 'live' ? 'Live' : 'In review'}</span>
+      </div></div>`).join('') : '<div class="sub">No tracks yet.</div>'}`;
+}
+function viewArtists(u) {
+  const mine = u.artistId ? artistById(u.artistId) : null;
+  if (mine) return viewStudio(mine) + viewQueue();
+  const pending = db.claims.filter(c => c.email === u.email && c.status === 'pending');
+  let html = `
+    <h1>Artists</h1>
+    <p class="sub">Artists can claim an existing profile or create one, then submit music they are authorized to share. Every profile is checked before it is verified.</p>`;
+  html += pending.map(c => `<div class="card"><strong>In review</strong><div class="sub">${esc(c.type === 'claim' ? 'Claim: ' + c.artistName : 'New profile: ' + c.artistName)}</div></div>`).join('');
+  const target = ui.claimTarget ? artistById(ui.claimTarget) : null;
+  if (target && !target.verified) {
+    html += claimFormHTML(target);
+  } else {
+    const open = db.artists.filter(a => !a.verified);
+    html += `<h2>Claim an existing profile</h2>`;
+    html += open.length ? open.map(a => `
+      <div class="card"><div class="card-head">
+        <div><strong>${esc(a.name)}</strong><div class="sub">${esc(a.city)} · ${esc(a.genres.join(', '))}</div></div>
+        <button class="btn small" data-act="claim-open" data-id="${a.id}">Claim</button>
+      </div></div>`).join('') : '<div class="sub">No unclaimed profiles right now.</div>';
+    html += `<h2>Create a new profile</h2>` + createFormHTML();
+  }
+  return html + viewQueue();
+}
+function viewQueue() {
+  const claims = db.claims.filter(c => c.status === 'pending');
+  const tracks = db.artists.flatMap(a => a.tracks.filter(t => t.status === 'pending').map(t => ({ a, t })));
+  return `
+  <details class="mod">
+    <summary>Demo review queue (staff-only in a real launch)</summary>
+    <h3 style="margin-top:12px">Profile claims and new profiles</h3>
+    ${claims.length ? claims.map(c => `
+      <div class="card"><strong>${esc(c.type === 'claim' ? 'Claim: ' + c.artistName : 'New profile: ' + c.artistName)}</strong>
+        <div class="sub">From ${esc(c.email)}${c.link ? ' · link: ' + esc(c.link) : ''}</div>
+        ${c.type === 'claim' && c.claimant ? `<div class="sub">Claimant: ${esc(c.claimant)}</div>` : ''}
+        <div class="row" style="margin-top:8px"><button class="btn small" data-act="mod-approve-claim" data-id="${c.id}">Approve</button><button class="btn ghost small" data-act="mod-reject-claim" data-id="${c.id}">Reject</button></div>
+      </div>`).join('') : '<div class="sub">Nothing pending.</div>'}
+    <h3 style="margin-top:14px">Tracks awaiting rights review</h3>
+    ${tracks.length ? tracks.map(({ a, t }) => `
+      <div class="card"><strong>${esc(t.title)}</strong><div class="sub">${esc(a.name)}${t.previewUrl ? ' · preview link on file' : ''}</div>
+        <div class="row" style="margin-top:8px"><button class="btn small" data-act="mod-approve-track" data-id="${t.id}">Approve</button></div>
+      </div>`).join('') : '<div class="sub">Nothing pending.</div>'}
+    <h3 style="margin-top:14px">Reports</h3>
+    ${db.reports.length ? db.reports.map(r => {
+      const a = artistById(r.artistId);
+      return `<div class="card"><strong>${esc(a ? a.name : 'Profile')}</strong><div class="sub">Reason: ${esc(r.reason)} · ${esc(r.createdAt.slice(0, 10))}</div>
+        <div class="row" style="margin-top:8px"><button class="btn ghost small" data-act="mod-clear-report" data-id="${r.id}">Dismiss</button></div></div>`;
+    }).join('') : '<div class="sub">No reports.</div>'}
+  </details>`;
+}
+
+function viewMe(u) {
+  const genres = Object.entries(u.taste.genres);
+  const picks = u.taste.artists.map(artistById).filter(Boolean);
+  return `
+    <h1>Me</h1>
+    <div class="card"><strong>${esc(u.name)}</strong><div class="sub">${esc(u.email)} · ${u.role === 'artist' ? 'Artist account' : 'Listener account'}</div></div>
+    ${meInstallCardHTML()}
+    <h2>Taste profile</h2>
+    <p class="sub">This is what SideStage uses to rank Discover. Remove anything you don't want used.</p>
+    <div class="card">
+      <strong style="font-size:.95rem">Genre signals</strong>
+      <div style="margin-top:6px">${genres.length ? genres.map(([g, w]) => `<span class="pill">${esc(g)} · ${Number(w).toFixed(1)} <button class="link" style="padding:0 0 0 4px" data-act="remove-genre" data-g="${esc(g)}" aria-label="Remove ${esc(g)}">×</button></span>`).join('') : '<span class="sub">None yet.</span>'}</div>
+      <strong style="font-size:.95rem;display:block;margin-top:14px">Favorite artists</strong>
+      <div style="margin-top:6px">${picks.length ? picks.map(a => `<span class="pill">${esc(a.name)} <button class="link" style="padding:0 0 0 4px" data-act="remove-pick" data-id="${a.id}" aria-label="Remove ${esc(a.name)}">×</button></span>`).join('') : '<span class="sub">None yet.</span>'}</div>
+      <label for="prov">Service you already use (for Listen links)</label>
+      <select id="prov" data-act="set-provider">${providerOptions(u.taste.provider)}</select>
+      <div class="row" style="margin-top:12px"><button class="btn ghost small" data-act="redo-onb">Edit taste setup</button></div>
+    </div>
+    <h2>Privacy &amp; data</h2>
+    <div class="card">
+      <ul class="kv">
+        <li><strong>Stored:</strong> your email, display name, a salted slow hash of your password (never the password itself), taste profile, shortlist, "Not for me" choices, and any claims or reports you submit.</li>
+        <li><strong>Device permissions:</strong> none. No camera, microphone, location or motion. Previews are either an artist's authorized link or a tone generated on your device.</li>
+        <li><strong>Connected services:</strong> none. Linking a streaming account would need your explicit approval. That is planned, not built.</li>
+        <li><strong>Sharing:</strong> policy from the business plan: personal information is not sold to advertisers or data brokers.</li>
+        <li><strong>Listen links:</strong> tapping one opens that service's search page in a new tab, and that service's privacy policy applies.</li>
+      </ul>
+      <div class="row" style="margin-top:14px"><button class="btn ghost small" data-act="export">Export my data</button><button class="btn danger small" data-act="delete-account">Delete account</button></div>
+    </div>
+    <div class="row" style="margin-top:16px"><button class="btn ghost block" data-act="signout">Sign out</button></div>
+    <p class="note">Prototype: data lives only in this browser. A public launch would need a server-side account system, encrypted connections and storage, and a published privacy policy.</p>`;
+}
+
+function reportSheet() {
+  if (!ui.reportTarget) return '';
+  const a = artistById(ui.reportTarget);
+  return `
+  <div class="sheet-bg" data-act="report-cancel">
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Report a profile">
+      <h3>Report ${esc(a ? a.name : 'this profile')}</h3>
+      <p class="sub">Tell us what's wrong. Reports go to SideStage review.</p>
+      <div class="stack" style="margin-top:12px">
+        <button class="btn ghost block" data-act="report-send" data-reason="Impersonation">It impersonates someone</button>
+        <button class="btn ghost block" data-act="report-send" data-reason="Unauthorized upload">Music posted without permission</button>
+        <button class="btn ghost block" data-act="report-send" data-reason="Other">Something else</button>
+        <button class="btn block" data-act="report-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewApp(u) {
+  const tabs = [['discover', 'Discover'], ['shortlist', 'Shortlist'], ['artists', 'Artists'], ['me', 'Me']];
+  const body = ui.tab === 'shortlist' ? viewShortlist(u)
+    : ui.tab === 'artists' ? viewArtists(u)
+    : ui.tab === 'me' ? viewMe(u)
+    : viewDiscover(u);
+  return `
+  <header class="top"><div class="logo">Side<b>Stage</b></div><span class="badge-demo">Demo catalog</span></header>
+  ${body}
+  <nav class="bottom" aria-label="Main">
+    ${tabs.map(([id, label]) => `<button data-act="tab" data-tab="${id}" ${ui.tab === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}
+  </nav>`;
+}
+
+function render() {
+  const u = me();
+  let html;
+  if (!u) html = viewAuth();
+  else if (!u.onboarded || ui.editing) html = viewOnboarding();
+  else html = viewApp(u);
+  document.getElementById('app').innerHTML = `<div class="shell">${html}</div>${reportSheet()}`;
+}
+function commit() { save(); render(); }
+function commitTop() { window.scrollTo({ top: 0 }); commit(); }
+
+/* ---------- Install as an app (PWA) ---------- */
+// 'sidestage.installed' holds the time (ms, as a string) the browser reported the app installed; the install prompts stay hidden for 60 days after it.
+// 'sidestage.installDismissedAt' holds the time (ms, as a string) of a "Not now" or a declined native prompt; the Discover card stays hidden for 30 days after it.
+// A stored time in the future, or one that cannot be read, counts as expired.
+const INSTALLED_KEY = 'sidestage.installed';
+const DISMISSED_KEY = 'sidestage.installDismissedAt';
+const DISMISS_MS = 30 * 24 * 60 * 60 * 1000;
+const INSTALLED_MS = 60 * 24 * 60 * 60 * 1000;
+let deferredPrompt = null;  // the browser's install prompt (Chromium and Android), kept until the user answers it
+let installedThisVisit = false, dismissedThisVisit = false; // also hide the cards on this visit if localStorage is blocked
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// Only Safari on iOS gets the Share steps; other iOS browsers are asked to open SideStage in Safari.
+const isIOSSafari = () => {
+  const ua = navigator.userAgent;
+  return isIOS() && /Safari/.test(ua) && /Version\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|FBAN|FBAV|Instagram|GSA/.test(ua);
+};
+const installTabOpen = () => { const u = me(); return !!(u && u.onboarded && !ui.editing && (ui.tab === 'discover' || ui.tab === 'me')); };
+function installRecorded() {
+  if (installedThisVisit) return true;
+  try {
+    const at = Number(localStorage.getItem(INSTALLED_KEY));
+    const age = new Date().getTime() - at;
+    return at > 0 && age >= 0 && age < INSTALLED_MS;
+  } catch (e) { return false; }
+}
+function installDismissed() {
+  if (dismissedThisVisit) return true;
+  try {
+    const at = Number(localStorage.getItem(DISMISSED_KEY));
+    const age = new Date().getTime() - at;
+    return at > 0 && age >= 0 && age < DISMISS_MS; // a time in the future counts as expired
+  } catch (e) { return false; }
+}
+function rememberInstallDismissal() {
+  dismissedThisVisit = true;
+  try { localStorage.setItem(DISMISSED_KEY, String(new Date().getTime())); }
+  catch (e) { /* storage blocked: the card stays hidden for this visit only */ }
+}
+async function installNow() {
+  const ev = deferredPrompt;
+  if (!ev) return;
+  deferredPrompt = null; // one prompt per event: cleared before anything else, so a second tap does nothing
+  if (installTabOpen()) render(); // the Install button goes at once, even if the browser never answers
+  try {
+    await ev.prompt();
+    const choice = await ev.userChoice;
+    if (choice && choice.outcome === 'dismissed') rememberInstallDismissal();
+  } catch (err) {
+    console.warn('SideStage: the install prompt could not be shown.', err);
+    toast('Install is not available here. Use your browser menu.');
+  }
+}
+// Discover card: in normal flow, so it scrolls away and never covers content or a sheet.
+function installCardHTML() {
+  if (isStandalone() || installRecorded() || installDismissed()) return '';
+  if (deferredPrompt) return `
+    <section class="card" role="region" aria-label="Install SideStage">
+      <p style="margin:0">Install SideStage for a full-screen app with its own icon.</p>
+      <div class="row" style="margin-top:10px"><button class="btn" data-act="pwa-install">Install</button><button class="btn ghost" data-act="pwa-dismiss">Not now</button></div>
+    </section>`;
+  if (isIOSSafari()) return `
+    <section class="card" role="region" aria-label="Install SideStage">
+      <p style="margin:0">Install SideStage: tap Share, then Add to Home Screen.</p>
+      <div class="row" style="margin-top:10px"><button class="btn ghost" data-act="pwa-dismiss">Not now</button></div>
+    </section>`;
+  return '';
+}
+// Me card: not hidden by "Not now"; hidden once the app is installed.
+function meInstallCardHTML() {
+  if (isStandalone() || installRecorded()) return '';
+  let steps;
+  if (deferredPrompt) steps = '<div class="row" style="margin-top:10px"><button class="btn" data-act="pwa-install">Install</button></div>';
+  else if (!isIOS()) steps = '<p class="sub" style="margin:10px 0 0">Use your browser menu and choose Install app or Add to Home Screen.</p>';
+  else if (isIOSSafari()) steps = '<p class="sub" style="margin:10px 0 0">Tap Share, then Add to Home Screen.</p>';
+  else steps = '<p class="sub" style="margin:10px 0 0">Open SideStage in Safari to add it to your Home Screen.</p>';
+  return `<div class="card"><strong>Install SideStage</strong><div class="sub">Open it full-screen from your home screen, with its own icon.</div>${steps}</div>`;
+}
+function registerServiceWorker() {
+  const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (!('serviceWorker' in navigator) || !secure) return; // never on file: URLs
+  if (navigator.serviceWorker.controller) return; // already controlled, so no registration request is needed
+  navigator.serviceWorker.register('sw.js', { scope: './' })
+    .catch(err => console.warn('SideStage: offline support did not start.', err));
+}
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (installTabOpen()) render();
+});
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  installedThisVisit = true;
+  try { localStorage.setItem(INSTALLED_KEY, String(Date.now())); } catch (e) { /* storage blocked: the cards stay hidden for this visit only */ }
+  toast('SideStage is on your home screen.');
+  if (installTabOpen()) render(); // other screens may hold typed text in open forms
+});
+window.addEventListener('load', () => { registerServiceWorker(); });
+
+/* ---------- Mutations ---------- */
+function startOnboarding(editing) {
+  const u = me();
+  ui.editing = !!editing; ui.onbStep = 1;
+  ui.draftGenres = Object.keys(u.taste.genres);
+  ui.draftArtists = [...u.taste.artists];
+  ui.draftProvider = u.taste.provider;
+  commit();
+}
+function finishOnboarding() {
+  const u = me();
+  const prev = u.taste.genres, next = {};
+  ui.draftGenres.forEach(g => { next[g] = prev[g] || 1; });
+  u.taste.genres = next;
+  u.taste.artists = [...ui.draftArtists];
+  u.taste.provider = ui.draftProvider;
+  u.onboarded = true; ui.editing = false; ui.tab = 'discover';
+  commitTop();
+}
+function saveTrack(trackId) {
+  const u = me(), f = trackById(trackId);
+  if (!u || !f || u.saved.some(s => s.trackId === trackId)) return;
+  u.saved.push({ trackId, artistId: f.a.id, savedAt: now() });
+  for (const g of f.a.genres) u.taste.genres[g] = Math.min(4, (u.taste.genres[g] || 0) + 0.5);
+  toast('Saved to Shortlist. Your genre signals were updated in Me.');
+  commit();
+}
+function sendReport(reason) {
+  const u = me();
+  if (!u || !ui.reportTarget) return;
+  db.reports.push({ id: uid('rep'), artistId: ui.reportTarget, reason, byEmail: u.email, createdAt: now() });
+  ui.reportTarget = null;
+  toast('Report received. Thank you for keeping SideStage trustworthy.');
+  commit();
+}
+function submitClaim(fd, form) {
+  const u = me(), a = artistById(form.dataset.id);
+  const name = String(fd.get('name') || '').trim();
+  const link = String(fd.get('link') || '').trim();
+  if (!a || a.verified) return showErr('claim-err', 'This profile is no longer available to claim.');
+  if (!name) return showErr('claim-err', 'Add your name.');
+  if (!link.startsWith('https://')) return showErr('claim-err', 'Use an https:// link so we can check the source.');
+  if (!fd.get('attest')) return showErr('claim-err', 'Confirm that you are authorized to manage this profile.');
+  if (db.claims.some(c => c.email === u.email && c.status === 'pending' && c.artistId === a.id)) return showErr('claim-err', 'You already have a pending claim for this profile.');
+  db.claims.push({ id: uid('clm'), type: 'claim', email: u.email, artistId: a.id, artistName: a.name, claimant: name, link, status: 'pending', createdAt: now() });
+  ui.claimTarget = null;
+  toast('Claim submitted for review.');
+  commit();
+}
+function submitNewProfile(fd) {
+  const u = me();
+  const name = String(fd.get('name') || '').trim();
+  const city = String(fd.get('city') || '').trim();
+  const bio = String(fd.get('bio') || '').trim().slice(0, 400);
+  const genres = fd.getAll('genre');
+  if (!name) return showErr('create-err', 'Add a name.');
+  if (!city) return showErr('create-err', 'Add a city.');
+  if (genres.length < 1 || genres.length > 3) return showErr('create-err', 'Pick 1 to 3 genres.');
+  if (!fd.get('attest')) return showErr('create-err', 'Confirm that you are authorized to represent this artist.');
+  const dup = db.artists.find(a => a.name.trim().toLowerCase() === name.toLowerCase());
+  if (dup) return showErr('create-err', dup.verified
+    ? `A verified profile named "${dup.name}" already exists. If that is you, use Claim on it instead.`
+    : `A profile named "${dup.name}" already exists. Use Claim on it instead.`);
+  if (db.claims.some(c => c.email === u.email && c.type === 'new' && c.status === 'pending')) return showErr('create-err', 'You already have a new profile waiting for review.');
+  db.claims.push({ id: uid('clm'), type: 'new', email: u.email, artistName: name, profile: { city, genres, bio }, status: 'pending', createdAt: now() });
+  toast('Profile submitted for review.');
+  commit();
+}
+function saveProfile(fd) {
+  const u = me(), a = u && artistById(u.artistId);
+  if (!a) return;
+  a.bio = String(fd.get('bio') || '').trim().slice(0, 400);
+  a.offer = String(fd.get('offer') || '').trim().slice(0, 120) || null;
+  toast('Profile saved.');
+  commit();
+}
+function submitTrack(fd) {
+  const u = me(), a = u && artistById(u.artistId);
+  if (!a) return;
+  const title = String(fd.get('title') || '').trim();
+  const seconds = parseInt(fd.get('seconds'), 10);
+  const url = String(fd.get('previewUrl') || '').trim();
+  if (!title) return showErr('track-err', 'Add a track title.');
+  if (!(seconds >= 30 && seconds <= 900)) return showErr('track-err', 'Length must be between 30 and 900 seconds.');
+  if (url && !url.startsWith('https://')) return showErr('track-err', 'Preview links must start with https://.');
+  if (!fd.get('rights')) return showErr('track-err', 'Confirm the rights statement to submit.');
+  a.tracks.push({ id: uid(a.id + 't'), title, seconds, seed: 1 + Math.floor(Math.random() * 16), status: 'pending', previewUrl: url || null });
+  toast('Track submitted. It goes live after rights review.');
+  commit();
+}
+function approveClaim(id) {
+  const c = db.claims.find(x => x.id === id);
+  const owner = c && db.users[c.email];
+  if (!c || c.status !== 'pending' || !owner) return commit();
+  if (owner.artistId) { c.status = 'rejected'; toast('That account already manages a profile.'); return commit(); }
+  if (c.type === 'claim') {
+    const a = artistById(c.artistId);
+    if (!a || a.verified) { c.status = 'rejected'; toast('That profile was already claimed.'); return commit(); }
+    a.verified = true; a.ownerEmail = c.email; owner.artistId = a.id;
+  } else {
+    const a = { id: uid('art'), name: c.artistName, city: c.profile.city, genres: c.profile.genres, tags: [],
+      bio: c.profile.bio || '', attention: 50, verified: true, ownerEmail: c.email, offer: null, tracks: [] };
+    db.artists.push(a); owner.artistId = a.id;
+  }
+  c.status = 'approved';
+  toast('Approved. The artist can now manage the profile in Artists.');
+  commit();
+}
+function rejectClaim(id) {
+  const c = db.claims.find(x => x.id === id);
+  if (c && c.status === 'pending') c.status = 'rejected';
+  commit();
+}
+function approveTrack(id) {
+  const f = trackById(id);
+  if (f) f.t.status = 'live';
+  toast('Track is live in Discover.');
+  commit();
+}
+async function copyList() {
+  try { await navigator.clipboard.writeText(listText()); toast('Shortlist copied.'); }
+  catch (e) { toast('Copy is blocked in this browser. Try Download instead.'); }
+}
+function downloadList() {
+  downloadBlob('sidestage-shortlist.txt', new Blob([listText()], { type: 'text/plain' }));
+}
+function exportData() {
+  const u = me();
+  if (!u) return;
+  const data = {
+    exportedAt: now(),
+    account: { email: u.email, name: u.name, role: u.role, createdAt: u.createdAt },
+    tasteProfile: u.taste,
+    shortlist: u.saved.map(s => { const f = trackById(s.trackId); return { song: f ? f.t.title : null, artist: f ? f.a.name : null, savedAt: s.savedAt }; }),
+    notInterestedIn: u.skipped.map(id => { const a = artistById(id); return a ? a.name : id; }),
+    reportsYouFiled: db.reports.filter(r => r.byEmail === u.email).map(r => { const a = artistById(r.artistId); return { artist: a ? a.name : null, reason: r.reason, createdAt: r.createdAt }; }),
+  };
+  downloadBlob('sidestage-my-data.json', new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  toast('Your data was downloaded.');
+}
+function deleteAccount() {
+  const u = me();
+  if (!u) return;
+  if (!confirm('Delete your SideStage account and everything saved on this device? Any artist profile you manage becomes unclaimed. This cannot be undone.')) return;
+  stopPreview();
+  db.artists.forEach(a => { if (a.ownerEmail === u.email) { a.ownerEmail = null; a.verified = false; } });
+  db.claims = db.claims.filter(c => c.email !== u.email);
+  db.reports = db.reports.filter(r => r.byEmail !== u.email);
+  delete db.users[u.email];
+  db.session = null; ui.tab = 'discover'; ui.editing = false;
+  commit();
+  toast('Account deleted.');
+}
+
+async function signup(fd) {
+  const email = String(fd.get('email') || '').trim().toLowerCase();
+  const name = String(fd.get('name') || '').trim();
+  const pw = String(fd.get('password') || '');
+  const role = fd.get('role') === 'artist' ? 'artist' : 'listener';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showErr('auth-err', 'Enter a valid email address.');
+  if (!name) return showErr('auth-err', 'Add a display name.');
+  if (pw.length < 8) return showErr('auth-err', 'Use at least 8 characters for your password.');
+  if (db.users[email]) return showErr('auth-err', 'An account with this email already exists. Try signing in.');
+  try {
+    const salt = newSalt();
+    const hash = await hashPw(pw, salt);
+    db.users[email] = { email, name, role, salt, hash, createdAt: now(), onboarded: false,
+      taste: { genres: {}, artists: [], provider: 'spotify' }, saved: [], skipped: [], artistId: null };
+    db.session = email; ui.tab = 'discover';
+    startOnboarding(false);
+  } catch (err) { showErr('auth-err', err.message); }
+}
+async function signin(fd) {
+  const email = String(fd.get('email') || '').trim().toLowerCase();
+  const pw = String(fd.get('password') || '');
+  const u = db.users[email];
+  try {
+    const ok = u && (await hashPw(pw, u.salt)) === u.hash;
+    if (!ok) return showErr('auth-err', 'Email or password is incorrect.');
+  } catch (err) { return showErr('auth-err', err.message); }
+  db.session = email; ui.tab = 'discover';
+  commitTop();
+}
+
+/* ---------- Event wiring ---------- */
+const ACTIONS = {
+  'auth-mode': el => { ui.authMode = el.dataset.mode; render(); },
+  'toggle-genre': el => {
+    const g = el.dataset.g;
+    if (ui.draftGenres.includes(g)) ui.draftGenres = ui.draftGenres.filter(x => x !== g);
+    else if (ui.draftGenres.length >= MAX_GENRES) return toast(`Pick up to ${MAX_GENRES} genres.`);
+    else ui.draftGenres.push(g);
+    render();
+  },
+  'onb-next': () => { ui.onbStep = 2; window.scrollTo({ top: 0 }); render(); },
+  'onb-back': () => { ui.onbStep = 1; window.scrollTo({ top: 0 }); render(); },
+  'onb-skip': () => {
+    if (ui.editing) { ui.editing = false; return render(); }
+    ui.draftGenres = []; ui.draftArtists = []; finishOnboarding();
+  },
+  'onb-finish': () => finishOnboarding(),
+  'toggle-fav': el => {
+    const id = el.dataset.id;
+    if (ui.draftArtists.includes(id)) ui.draftArtists = ui.draftArtists.filter(x => x !== id);
+    else if (ui.draftArtists.length >= MAX_PICKS) return toast(`Pick up to ${MAX_PICKS} artists.`);
+    else ui.draftArtists.push(id);
+    render();
+  },
+  'tab': el => { stopPreview(); ui.tab = el.dataset.tab; ui.reportTarget = null; render(); window.scrollTo({ top: 0 }); },
+  'genre': el => { const g = el.dataset.g || null; ui.genreFilter = g === ui.genreFilter ? null : g; render(); },
+  'underrated': () => { ui.underratedOnly = !ui.underratedOnly; render(); },
+  'preview': el => togglePreview(el.dataset.id),
+  'save': el => saveTrack(el.dataset.id),
+  'unsave': el => { const u = me(); u.saved = u.saved.filter(s => s.trackId !== el.dataset.id); commit(); },
+  'skip': el => {
+    const u = me();
+    if (!u.skipped.includes(el.dataset.artist)) u.skipped.push(el.dataset.artist);
+    toast("Hidden. You won't see this artist in Discover again.");
+    commit();
+  },
+  'report-open': el => { ui.reportTarget = el.dataset.artist; render(); },
+  'report-cancel': () => { ui.reportTarget = null; render(); },
+  'report-send': el => sendReport(el.dataset.reason),
+  'copy-list': () => copyList(),
+  'download-list': () => downloadList(),
+  'remove-genre': el => { const u = me(); delete u.taste.genres[el.dataset.g]; commit(); },
+  'remove-pick': el => { const u = me(); u.taste.artists = u.taste.artists.filter(x => x !== el.dataset.id); commit(); },
+  'redo-onb': () => startOnboarding(true),
+  'export': () => exportData(),
+  'delete-account': () => deleteAccount(),
+  'signout': () => { stopPreview(); db.session = null; ui.editing = false; ui.tab = 'discover'; commitTop(); },
+  'pwa-install': () => installNow(),
+  'pwa-dismiss': () => { rememberInstallDismissal(); render(); },
+  'claim-open': el => { ui.claimTarget = el.dataset.id; render(); },
+  'claim-cancel': () => { ui.claimTarget = null; render(); },
+  'mod-approve-claim': el => approveClaim(el.dataset.id),
+  'mod-reject-claim': el => rejectClaim(el.dataset.id),
+  'mod-approve-track': el => approveTrack(el.dataset.id),
+  'mod-clear-report': el => { db.reports = db.reports.filter(r => r.id !== el.dataset.id); commit(); },
+};
+const FORMS = {
+  signup: fd => signup(fd),
+  signin: fd => signin(fd),
+  claim: (fd, f) => submitClaim(fd, f),
+  create: fd => submitNewProfile(fd),
+  profile: fd => saveProfile(fd),
+  track: fd => submitTrack(fd),
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  if (el.classList.contains('sheet-bg') && e.target !== el) return;
+  const fn = ACTIONS[el.dataset.act];
+  if (fn) { e.preventDefault(); fn(el, e); }
+});
+document.addEventListener('change', e => {
+  const act = e.target.dataset && e.target.dataset.act;
+  if (act === 'set-provider') { const u = me(); if (u) { u.taste.provider = e.target.value; commit(); } }
+  if (act === 'draft-provider') ui.draftProvider = e.target.value;
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, handler = FORMS[f.dataset.form];
+  if (handler) handler(new FormData(f), f);
+});
+
+render();
+})();
+</script>
+</body>
+</html>
