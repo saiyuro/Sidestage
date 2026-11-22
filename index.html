@@ -24,9 +24,9 @@ header.top{display:flex;align-items:center;gap:10px;padding:16px 0 4px}
 .logo{font-weight:800;font-size:1.3rem;letter-spacing:-.3px}
 .logo b{color:var(--accent2);font-weight:800}
 .badge-demo{margin-left:auto;font-size:.72rem;color:var(--warn);border:1px solid #6b4b1f;border-radius:999px;padding:2px 8px}
-h1{font-size:1.5rem;margin:14px 0 4px}
+h1{font-size:1.5rem;margin:14px 0 4px;overflow-wrap:anywhere}
 h2{font-size:1.15rem;margin:20px 0 8px}
-h3{font-size:1.05rem;margin:0}
+h3{font-size:1.05rem;margin:0;overflow-wrap:anywhere}
 p{margin:.5em 0}
 .sub{font-size:.88rem;color:var(--muted)}
 .note{font-size:.82rem;color:var(--muted);margin:10px 0}
@@ -105,6 +105,7 @@ details.mod summary{cursor:pointer;color:var(--warn);font-weight:600}
 .hero{text-align:center;padding:30px 0 6px}
 .mark{width:84px;height:84px;margin:0 auto 8px;display:block}
 .tagline{font-style:italic;color:var(--accent2);margin:0}
+.name-btn{background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:3px;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -129,33 +130,49 @@ const PBKDF2_ITER = 150000;
 function A(id, name, city, genres, tags, bio, attention, verified, offer, tracks) {
   return {
     id, name, city, genres, tags, bio, attention, verified, ownerEmail: null, offer,
-    tracks: tracks.map(([title, seconds, seed], i) => ({ id: `${id}-t${i + 1}`, title, seconds, seed, status: 'live', previewUrl: null })),
+    // A track's optional fourth field is its own genres. A track without them uses the artist's genres.
+    tracks: tracks.map(([title, seconds, seed, genres], i) => ({ id: `${id}-t${i + 1}`, title, seconds, seed, status: 'live', previewUrl: null, ...(genres ? { genres } : {}) })),
   };
 }
 const SEED = [
-  A('hollow-pines', 'Hollow Pines', 'Duluth, MN', ['Bedroom Folk','Dream Pop'], ['acoustic','nocturnal'], 'Two friends, one four-track recorder, and a porch in Duluth.', 18, true, 'Unreleased two-track B-side for anyone who saves three songs.', [['Porchlight Static',214,3],['Thin Ice Hymn',188,7]]),
-  A('velvet-harbor', 'Velvet Harbor', 'Halifax, NS', ['Dream Pop','Shoegaze'], ['hazy','nocturnal'], 'Guitars that sound like weather coming in off the water.', 26, true, null, [['Undertow Signal',240,11],['Glass Tide',201,5]]),
-  A('mira-solenne', 'Mira Solenne', 'Lisbon, PT', ['Chamber Pop','Neo-Soul'], ['intimate','hopeful'], 'Strings, a small choir, and a voice that does not need to be loud.', 9, false, null, [['Small Hours Choir',233,2]]),
-  A('quiet-engines', 'The Quiet Engines', 'Leeds, UK', ['Post-Punk','Indie Rock'], ['driving','angular'], 'Angular guitars and factory-floor drums.', 42, true, null, [['Factory Weather',197,9]]),
-  A('juniper-hale', 'Juniper Hale', 'Asheville, NC', ['Bedroom Folk','Chamber Pop'], ['acoustic','intimate'], 'Songs written on a bus and recorded in a closet.', 12, false, null, [['Paper Lanterns',175,4]]),
-  A('nightjar-club', 'Nightjar Club', 'Osaka, JP', ['Synthwave','Lo-fi'], ['nocturnal','driving'], 'Late-night synths for missed trains and long drives.', 33, true, 'Exclusive 8-bit remix pack for Shortlist savers.', [['Neon Mezzanine',246,13]]),
-  A('pale-atlas', 'Pale Atlas', 'Reykjavik, IS', ['Ambient','Shoegaze'], ['slow','vast'], 'Drones recorded near glaciers and rebuilt from field notes.', 5, false, null, [['Glacier Radio',301,1]]),
-  A('ojo-dorado', 'Ojo Dorado', 'Accra, GH', ['Afrobeat','Jazz Fusion'], ['rhythmic','hopeful'], 'Horns, polyrhythms, and a market-morning energy.', 21, true, null, [['Market Morning',219,6]]),
-  A('sable-and-sparrow', 'Sable & Sparrow', 'New Orleans, LA', ['Jazz Fusion','Neo-Soul'], ['warm','late-night'], 'Brass that sounds like it was played in the rain.', 28, true, null, [['Brass in the Rain',262,8]]),
-  A('kestrel-moon', 'Kestrel Moon', 'Denver, CO', ['Synthwave','Dream Pop'], ['hopeful','driving'], 'Big choruses and bright synths.', 61, true, null, [['Night Shift Sky',204,10]]),
-  A('tin-sparrow-riot', 'Tin Sparrow Riot', 'Detroit, MI', ['Indie Rock','Post-Punk'], ['loud','driving'], 'Loud, fast, and already on a lot of playlists.', 74, true, null, [['Overpass Anthem',189,12]]),
-  A('ada-brisk', 'Ada Brisk', 'Seoul, KR', ['Lo-fi','Ambient'], ['soft','nocturnal'], 'Rain-soundtrack beats for studying and sleeping.', 15, false, null, [['Rain on Tin Roofs',166,14]]),
-  A('harbor-and-heron', 'Harbor & Heron Collective', 'Portland, ME', ['Chamber Pop','Indie Rock'], ['orchestral','hopeful'], 'Eleven players, one tide chart, and a lot of brass-band warmth.', 31, true, null, [['Low Tide Arithmetic',252,15]]),
-  A('dune-tiller', 'Dune Tiller', 'Tucson, AZ', ['Shoegaze','Post-Punk'], ['hazy','driving'], 'Desert feedback loops and dry, steady drums.', 37, false, null, [['Mirage Feedback',221,16]]),
+  A('hollow-pines', 'Hollow Pines', 'Duluth, MN', ['Bedroom Folk','Dream Pop'], ['acoustic','nocturnal'], 'Two friends, one four-track recorder, and a porch in Duluth.', 18, true, 'Unreleased two-track B-side for anyone who saves three songs.', [['Porchlight Static',214,3],['Thin Ice Hymn',188,7],['Kettle on the Woodstove',197,9,['Bedroom Folk','Lo-fi']]]),
+  A('velvet-harbor', 'Velvet Harbor', 'Halifax, NS', ['Dream Pop','Shoegaze'], ['hazy','nocturnal'], 'Guitars that sound like weather coming in off the water.', 26, true, null, [['Undertow Signal',240,11],['Glass Tide',201,5],['Lighthouse Feedback',232,4,['Shoegaze','Ambient']]]),
+  A('mira-solenne', 'Mira Solenne', 'Lisbon, PT', ['Chamber Pop','Neo-Soul'], ['intimate','hopeful'], 'Strings, a small choir, and a voice that does not need to be loud.', 9, false, null, [['Small Hours Choir',233,2],['Paper Bells in March',211,12,['Chamber Pop']]]),
+  A('quiet-engines', 'The Quiet Engines', 'Leeds, UK', ['Post-Punk','Indie Rock'], ['driving','angular'], 'Angular guitars and factory-floor drums.', 42, true, null, [['Factory Weather',197,9],['Shift Change at Dawn',186,5,['Post-Punk','Indie Rock']]]),
+  A('juniper-hale', 'Juniper Hale', 'Asheville, NC', ['Bedroom Folk','Chamber Pop'], ['acoustic','intimate'], 'Songs written on a bus and recorded in a closet.', 12, false, null, [['Paper Lanterns',175,4],['Bus Seat, Second Verse',169,8,['Chamber Pop','Dream Pop']]]),
+  A('nightjar-club', 'Nightjar Club', 'Osaka, JP', ['Synthwave','Lo-fi'], ['nocturnal','driving'], 'Late-night synths for missed trains and long drives.', 33, true, 'Exclusive 8-bit remix pack for Shortlist savers.', [['Neon Mezzanine',246,13],['Last Carriage to Namba',238,2,['Synthwave']],['Platform Nine Drizzle',214,15,['Lo-fi','Ambient']]]),
+  A('pale-atlas', 'Pale Atlas', 'Reykjavik, IS', ['Ambient','Shoegaze'], ['slow','vast'], 'Drones recorded near glaciers and rebuilt from field notes.', 5, false, null, [['Glacier Radio',301,1],['Meltwater Ledger',287,11,['Ambient','Shoegaze']]]),
+  A('ojo-dorado', 'Ojo Dorado', 'Accra, GH', ['Afrobeat','Jazz Fusion'], ['rhythmic','hopeful'], 'Horns, polyrhythms, and a market-morning energy.', 21, true, null, [['Market Morning',219,6],['Sunrise Scale Drill',224,7,['Afrobeat','Jazz Fusion']]]),
+  A('sable-and-sparrow', 'Sable & Sparrow', 'New Orleans, LA', ['Jazz Fusion','Neo-Soul'], ['warm','late-night'], 'Brass that sounds like it was played in the rain.', 28, true, null, [['Brass in the Rain',262,8],['Umbrella Brass',248,14,['Jazz Fusion','Neo-Soul']]]),
+  A('kestrel-moon', 'Kestrel Moon', 'Denver, CO', ['Synthwave','Dream Pop'], ['hopeful','driving'], 'Big choruses and bright synths.', 61, true, null, [['Night Shift Sky',204,10],['Bright Wire Heartbeat',196,6,['Synthwave']],['Sky Ladder Relay',217,12,['Dream Pop','Indie Rock']]]),
+  A('tin-sparrow-riot', 'Tin Sparrow Riot', 'Detroit, MI', ['Indie Rock','Post-Punk'], ['loud','driving'], 'Loud, fast, and already on a lot of playlists.', 74, true, null, [['Overpass Anthem',189,12],['Scaffold Sing-Along',178,13,['Post-Punk']]]),
+  A('ada-brisk', 'Ada Brisk', 'Seoul, KR', ['Lo-fi','Ambient'], ['soft','nocturnal'], 'Rain-soundtrack beats for studying and sleeping.', 15, false, null, [['Rain on Tin Roofs',166,14],['Dial Tone Lullaby',171,3,['Lo-fi']],['Blue Hour Study Hall',158,16,['Ambient','Synthwave']]]),
+  A('harbor-and-heron', 'Harbor & Heron Collective', 'Portland, ME', ['Chamber Pop','Indie Rock'], ['orchestral','hopeful'], 'Eleven players, one tide chart, and a lot of brass-band warmth.', 31, true, null, [['Low Tide Arithmetic',252,15],['Brass Band at Slack Water',241,1,['Chamber Pop','Jazz Fusion']]]),
+  A('dune-tiller', 'Dune Tiller', 'Tucson, AZ', ['Shoegaze','Post-Punk'], ['hazy','driving'], 'Desert feedback loops and dry, steady drums.', 37, false, null, [['Mirage Feedback',221,16],['Mesa Drum Sermon',228,2,['Post-Punk']]]),
 ];
 
 /* ---------- Persistence (this browser only; prototype) ---------- */
 function load() {
-  try {
-    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (d && Array.isArray(d.artists)) return d;
-  } catch (e) { /* blocked or corrupt storage: start fresh */ }
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); }
+  catch (e) { /* blocked or corrupt storage: start fresh */ }
+  if (d && Array.isArray(d.artists)) return mergeSeed(d);
   return { users: {}, session: null, artists: JSON.parse(JSON.stringify(SEED)), claims: [], reports: [] };
+}
+// Browsers that saved the catalog earlier receive the songs added since then. Only artists and tracks are touched:
+// users, session, claims and reports never are. A second run finds nothing to add, so it changes nothing.
+function mergeSeed(d) {
+  for (const sa of SEED) {
+    const stored = d.artists.find(a => a && a.id === sa.id);
+    if (!stored) { d.artists.push(JSON.parse(JSON.stringify(sa))); continue; }
+    if (!Array.isArray(stored.tracks)) stored.tracks = [];
+    for (const st of sa.tracks) {
+      const have = stored.tracks.find(t => t && t.id === st.id);
+      if (!have) stored.tracks.push(JSON.parse(JSON.stringify(st)));
+      else if (st.genres && !Array.isArray(have.genres)) have.genres = [...st.genres];
+    }
+  }
+  return d;
 }
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(db)); }
@@ -167,6 +184,8 @@ let db = load();
 const ui = {
   authMode: 'signup', editing: false, onbStep: 1, draftGenres: [], draftArtists: [], draftProvider: 'spotify',
   tab: 'discover', genreFilter: null, underratedOnly: false, previewId: null, reportTarget: null, claimTarget: null,
+  artistView: null,   // id of the open artist profile, or null to show the tab body
+  artistScrollY: 0,   // window scroll position when a profile opened; Back restores it
 };
 
 /* ---------- Helpers ---------- */
@@ -340,7 +359,7 @@ function viewOnboarding() {
     <div class="stack" style="margin-top:12px">
       ${db.artists.filter(a => live(a).length).map(a => {
         const on = ui.draftArtists.includes(a.id);
-        return `<button class="card" style="margin:0;${on ? 'border-color:var(--accent)' : ''}" data-act="toggle-fav" data-id="${a.id}" aria-pressed="${on}">
+        return `<button class="card" style="margin:0;${on ? 'border-color:var(--accent)' : ''}" data-act="toggle-fav" data-id="${esc(a.id)}" aria-pressed="${on}">
           <strong>${esc(a.name)}</strong><div class="sub">${esc(a.genres.join(', '))}</div></button>`;
       }).join('')}
     </div>
@@ -390,7 +409,7 @@ function cardHTML(a, u, reasons) {
   return `
   <article class="card">
     <div class="card-head">
-      <div><h3>${esc(a.name)}</h3><div class="sub">${esc(a.city)}${a.tags.length ? ' · ' + esc(a.tags.join(', ')) : ''}</div></div>
+      <div><h3><button class="name-btn" data-act="artist-open" data-artist="${esc(a.id)}">${esc(a.name)}</button></h3><div class="sub">${esc(a.city)}${a.tags.length ? ' · ' + esc(a.tags.join(', ')) : ''}</div></div>
       <span class="badge ${a.verified ? '' : 'muted'}">${a.verified ? 'Verified' : 'Unclaimed'}</span>
     </div>
     <div style="margin-top:8px">${a.genres.map(g => `<span class="pill">${esc(g)}</span>`).join('')}</div>
@@ -453,7 +472,7 @@ function viewShortlist(u) {
     ${items.length ? items.map(f => `
       <article class="card">
         <div class="card-head">
-          <div><strong>${esc(f.t.title)}</strong><div class="sub">${esc(f.a.name)} · ${fmt(f.t.seconds)}</div></div>
+          <div><strong>${esc(f.t.title)}</strong><div class="sub"><button class="name-btn" data-act="artist-open" data-artist="${esc(f.a.id)}">${esc(f.a.name)}</button> · ${fmt(f.t.seconds)}</div></div>
           <button class="link" data-act="unsave" data-id="${esc(f.t.id)}">Remove</button>
         </div>
         <div class="actions">
@@ -464,12 +483,75 @@ function viewShortlist(u) {
       : '<div class="empty">No saved songs yet.<br>Save songs from Discover to build your list.</div>'}`;
 }
 
+/* A song's own genres, or its artist's genres when the song has none (an empty array counts as none). */
+function songGenres(t, a) {
+  return Array.isArray(t.genres) && t.genres.length ? t.genres : a.genres;
+}
+/* Artist profile songs, in this order: a match with the genre filter first (matches is 1, otherwise 0), then the user's
+   taste total for the song's genres (score), then the track's original position. */
+function rankedSongs(a, u) {
+  return live(a).map((t, i) => {
+    const genres = songGenres(t, a);
+    const matches = (ui.genreFilter && genres.includes(ui.genreFilter)) ? 1 : 0;
+    let score = 0;
+    for (const g of genres) score += Number(u.taste.genres[g]) || 0;
+    return { t, matches, score, i };
+  }).sort((x, y) => (y.matches - x.matches) || (y.score - x.score) || (x.i - y.i));
+}
+function viewArtist(u, a) {
+  const p = providerOf(u);
+  const first = Array.from(String(a.name ?? '').trim())[0] || '?';
+  const initial = Array.from(first.toUpperCase())[0];
+  const ranked = rankedSongs(a, u);
+  const anyMatch = ranked.some(x => x.matches);
+  const songs = ranked.map(({ t, matches }) => {
+    const saved = u.saved.some(s => s.trackId === t.id);
+    const playing = ui.previewId === t.id;
+    // The same disc as Discover, with the same period and phase as cardHTML, so a re-render does not restart the spin.
+    const period = playing ? 2000 : 10000;
+    const phase = -(Date.now() % period);
+    return `
+    <article class="card">
+      <div class="track" style="margin-top:0">
+        <div class="track-main">
+          <div class="vinyl${playing ? ' is-playing' : ''}" style="animation-delay:${phase}ms" aria-hidden="true"><div class="label">${coverSVG(t.id, initial)}</div></div>
+          <div class="track-text"><strong>${esc(t.title)}</strong><div>${songGenres(t, a).map(g => `<span class="pill">${esc(g)}</span>`).join('')}</div><div class="sub">${fmt(t.seconds)}${t.previewUrl ? ' · artist preview' : ' · demo tone'}</div>${matches ? '<span class="pill">Matches filter</span>' : ''}</div>
+        </div>
+        <button class="btn ghost small" data-act="preview" data-id="${esc(t.id)}">${playing ? '■ Stop' : '▶ Preview'}</button>
+      </div>
+      <div class="actions">
+        <button class="btn" data-act="save" data-id="${esc(t.id)}" ${saved ? 'disabled' : ''}>${saved ? 'Saved ✓' : '+ Save song'}</button>
+        <a class="btn ghost" href="${esc(listenUrl(p, a, t))}" target="_blank" rel="noopener">Listen on ${esc(p.name)}</a>
+      </div>
+    </article>`;
+  }).join('');
+  const basis = (ui.genreFilter && !anyMatch ? `No songs match ${esc(ui.genreFilter)}. Sorted by your taste profile`
+    : ui.genreFilter ? `Sorted by fit with your filters: ${esc(ui.genreFilter)}` : 'Sorted by your taste profile')
+    + (ui.underratedOnly ? '. Underrated only applies to the whole artist, so the order is unchanged' : '') + '.';
+  const active = [ui.genreFilter ? esc(ui.genreFilter) : '', ui.underratedOnly ? 'Underrated only' : ''].filter(Boolean);
+  const filterRow = active.length
+    ? `<div class="row" style="margin:6px 0 0"><span class="sub">Filter: ${active.join(' · ')}</span><button class="link" data-act="artist-clear-filter">Clear</button></div>`
+    : '';
+  return `
+    <div style="margin-top:12px"><button class="btn ghost small" data-act="artist-close">← Back</button></div>
+    <h1>${esc(a.name)}</h1>
+    <div class="sub">${esc(a.city)}${a.tags.length ? ' · ' + esc(a.tags.join(', ')) : ''}</div>
+    <div style="margin-top:8px"><span class="badge ${a.verified ? '' : 'muted'}">${a.verified ? 'Verified' : 'Unclaimed'}</span></div>
+    ${a.bio ? `<p>${esc(a.bio)}</p>` : ''}
+    <div>${a.genres.map(g => `<span class="pill">${esc(g)}</span>`).join('')}</div>
+    ${a.offer ? `<div class="offer">Artist offer: ${esc(a.offer)}</div>` : ''}
+    <h2>Songs</h2>
+    <p class="sub">${basis}</p>
+    ${filterRow}
+    ${songs || '<div class="empty">No songs published yet.</div>'}
+    <div style="text-align:center;margin-top:16px"><button class="link" data-act="report-open" data-artist="${esc(a.id)}">Report this artist</button></div>`;
+}
 function claimFormHTML(a) {
   return `
   <div class="card">
     <h3>Claim ${esc(a.name)}</h3>
     <p class="sub">Claims are reviewed before the profile is verified. Only claim a profile you manage.</p>
-    <form data-form="claim" data-id="${a.id}" novalidate>
+    <form data-form="claim" data-id="${esc(a.id)}" novalidate>
       <label for="cl-name">Your name (artist or manager)</label>
       <input id="cl-name" name="name" type="text" maxlength="80">
       <label for="cl-link">Official link (website, label or verified social page; https only)</label>
@@ -544,7 +626,7 @@ function viewArtists(u) {
     html += open.length ? open.map(a => `
       <div class="card"><div class="card-head">
         <div><strong>${esc(a.name)}</strong><div class="sub">${esc(a.city)} · ${esc(a.genres.join(', '))}</div></div>
-        <button class="btn small" data-act="claim-open" data-id="${a.id}">Claim</button>
+        <button class="btn small" data-act="claim-open" data-id="${esc(a.id)}">Claim</button>
       </div></div>`).join('') : '<div class="sub">No unclaimed profiles right now.</div>';
     html += `<h2>Create a new profile</h2>` + createFormHTML();
   }
@@ -561,7 +643,7 @@ function viewQueue() {
       <div class="card"><strong>${esc(c.type === 'claim' ? 'Claim: ' + c.artistName : 'New profile: ' + c.artistName)}</strong>
         <div class="sub">From ${esc(c.email)}${c.link ? ' · link: ' + esc(c.link) : ''}</div>
         ${c.type === 'claim' && c.claimant ? `<div class="sub">Claimant: ${esc(c.claimant)}</div>` : ''}
-        <div class="row" style="margin-top:8px"><button class="btn small" data-act="mod-approve-claim" data-id="${c.id}">Approve</button><button class="btn ghost small" data-act="mod-reject-claim" data-id="${c.id}">Reject</button></div>
+        <div class="row" style="margin-top:8px"><button class="btn small" data-act="mod-approve-claim" data-id="${esc(c.id)}">Approve</button><button class="btn ghost small" data-act="mod-reject-claim" data-id="${esc(c.id)}">Reject</button></div>
       </div>`).join('') : '<div class="sub">Nothing pending.</div>'}
     <h3 style="margin-top:14px">Tracks awaiting rights review</h3>
     ${tracks.length ? tracks.map(({ a, t }) => `
@@ -572,7 +654,7 @@ function viewQueue() {
     ${db.reports.length ? db.reports.map(r => {
       const a = artistById(r.artistId);
       return `<div class="card"><strong>${esc(a ? a.name : 'Profile')}</strong><div class="sub">Reason: ${esc(r.reason)} · ${esc(r.createdAt.slice(0, 10))}</div>
-        <div class="row" style="margin-top:8px"><button class="btn ghost small" data-act="mod-clear-report" data-id="${r.id}">Dismiss</button></div></div>`;
+        <div class="row" style="margin-top:8px"><button class="btn ghost small" data-act="mod-clear-report" data-id="${esc(r.id)}">Dismiss</button></div></div>`;
     }).join('') : '<div class="sub">No reports.</div>'}
   </details>`;
 }
@@ -590,7 +672,7 @@ function viewMe(u) {
       <strong style="font-size:.95rem">Genre signals</strong>
       <div style="margin-top:6px">${genres.length ? genres.map(([g, w]) => `<span class="pill">${esc(g)} · ${Number(w).toFixed(1)} <button class="link" style="padding:0 0 0 4px" data-act="remove-genre" data-g="${esc(g)}" aria-label="Remove ${esc(g)}">×</button></span>`).join('') : '<span class="sub">None yet.</span>'}</div>
       <strong style="font-size:.95rem;display:block;margin-top:14px">Favorite artists</strong>
-      <div style="margin-top:6px">${picks.length ? picks.map(a => `<span class="pill">${esc(a.name)} <button class="link" style="padding:0 0 0 4px" data-act="remove-pick" data-id="${a.id}" aria-label="Remove ${esc(a.name)}">×</button></span>`).join('') : '<span class="sub">None yet.</span>'}</div>
+      <div style="margin-top:6px">${picks.length ? picks.map(a => `<span class="pill">${esc(a.name)} <button class="link" style="padding:0 0 0 4px" data-act="remove-pick" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">×</button></span>`).join('') : '<span class="sub">None yet.</span>'}</div>
       <label for="prov">Service you already use (for Listen links)</label>
       <select id="prov" data-act="set-provider">${providerOptions(u.taste.provider)}</select>
       <div class="row" style="margin-top:12px"><button class="btn ghost small" data-act="redo-onb">Edit taste setup</button></div>
@@ -630,7 +712,9 @@ function reportSheet() {
 
 function viewApp(u) {
   const tabs = [['discover', 'Discover'], ['shortlist', 'Shortlist'], ['artists', 'Artists'], ['me', 'Me']];
-  const body = ui.tab === 'shortlist' ? viewShortlist(u)
+  const profile = ui.artistView ? artistById(ui.artistView) : null;   // an open profile replaces the tab body; the tab bar stays
+  const body = profile ? viewArtist(u, profile)
+    : ui.tab === 'shortlist' ? viewShortlist(u)
     : ui.tab === 'artists' ? viewArtists(u)
     : ui.tab === 'me' ? viewMe(u)
     : viewDiscover(u);
@@ -638,7 +722,7 @@ function viewApp(u) {
   <header class="top"><div class="logo">Side<b>Stage</b></div><span class="badge-demo">Demo catalog</span></header>
   ${body}
   <nav class="bottom" aria-label="Main">
-    ${tabs.map(([id, label]) => `<button data-act="tab" data-tab="${id}" ${ui.tab === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}
+    ${tabs.map(([id, label]) => `<button data-act="tab" data-tab="${esc(id)}" ${ui.tab === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}
   </nav>`;
 }
 
@@ -768,14 +852,14 @@ function finishOnboarding() {
   u.taste.genres = next;
   u.taste.artists = [...ui.draftArtists];
   u.taste.provider = ui.draftProvider;
-  u.onboarded = true; ui.editing = false; ui.tab = 'discover';
+  u.onboarded = true; ui.editing = false; ui.tab = 'discover'; ui.artistView = null;
   commitTop();
 }
 function saveTrack(trackId) {
   const u = me(), f = trackById(trackId);
   if (!u || !f || u.saved.some(s => s.trackId === trackId)) return;
   u.saved.push({ trackId, artistId: f.a.id, savedAt: now() });
-  for (const g of f.a.genres) u.taste.genres[g] = Math.min(4, (u.taste.genres[g] || 0) + 0.5);
+  for (const g of songGenres(f.t, f.a)) u.taste.genres[g] = Math.min(4, (u.taste.genres[g] || 0) + 0.5);
   toast('Saved to Shortlist. Your genre signals were updated in Me.');
   commit();
 }
@@ -901,7 +985,7 @@ function deleteAccount() {
   db.claims = db.claims.filter(c => c.email !== u.email);
   db.reports = db.reports.filter(r => r.byEmail !== u.email);
   delete db.users[u.email];
-  db.session = null; ui.tab = 'discover'; ui.editing = false;
+  db.session = null; ui.tab = 'discover'; ui.editing = false; ui.artistView = null;
   commit();
   toast('Account deleted.');
 }
@@ -920,7 +1004,7 @@ async function signup(fd) {
     const hash = await hashPw(pw, salt);
     db.users[email] = { email, name, role, salt, hash, createdAt: now(), onboarded: false,
       taste: { genres: {}, artists: [], provider: 'spotify' }, saved: [], skipped: [], artistId: null };
-    db.session = email; ui.tab = 'discover';
+    db.session = email; ui.tab = 'discover'; ui.artistView = null;
     startOnboarding(false);
   } catch (err) { showErr('auth-err', err.message); }
 }
@@ -932,7 +1016,7 @@ async function signin(fd) {
     const ok = u && (await hashPw(pw, u.salt)) === u.hash;
     if (!ok) return showErr('auth-err', 'Email or password is incorrect.');
   } catch (err) { return showErr('auth-err', err.message); }
-  db.session = email; ui.tab = 'discover';
+  db.session = email; ui.tab = 'discover'; ui.artistView = null;
   commitTop();
 }
 
@@ -960,7 +1044,10 @@ const ACTIONS = {
     else ui.draftArtists.push(id);
     render();
   },
-  'tab': el => { stopPreview(); ui.tab = el.dataset.tab; ui.reportTarget = null; render(); window.scrollTo({ top: 0 }); },
+  'tab': el => { stopPreview(); ui.tab = el.dataset.tab; ui.artistView = null; ui.reportTarget = null; render(); window.scrollTo({ top: 0 }); },
+  'artist-open': el => { stopPreview(); ui.artistScrollY = window.scrollY; ui.artistView = el.dataset.artist; render(); window.scrollTo({ top: 0 }); },
+  'artist-close': () => { stopPreview(); ui.artistView = null; render(); window.scrollTo({ top: ui.artistScrollY }); },
+  'artist-clear-filter': () => { ui.genreFilter = null; ui.underratedOnly = false; render(); },
   'genre': el => { const g = el.dataset.g || null; ui.genreFilter = g === ui.genreFilter ? null : g; render(); },
   'underrated': () => { ui.underratedOnly = !ui.underratedOnly; render(); },
   'preview': el => togglePreview(el.dataset.id),
@@ -982,7 +1069,7 @@ const ACTIONS = {
   'redo-onb': () => startOnboarding(true),
   'export': () => exportData(),
   'delete-account': () => deleteAccount(),
-  'signout': () => { stopPreview(); db.session = null; ui.editing = false; ui.tab = 'discover'; commitTop(); },
+  'signout': () => { stopPreview(); db.session = null; ui.editing = false; ui.tab = 'discover'; ui.artistView = null; commitTop(); },
   'pwa-install': () => installNow(),
   'pwa-dismiss': () => { rememberInstallDismissal(); render(); },
   'claim-open': el => { ui.claimTarget = el.dataset.id; render(); },
