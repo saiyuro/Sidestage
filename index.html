@@ -186,6 +186,7 @@ const ui = {
   tab: 'discover', genreFilter: null, underratedOnly: false, previewId: null, reportTarget: null, claimTarget: null,
   artistView: null,   // id of the open artist profile, or null to show the tab body
   artistScrollY: 0,   // window scroll position when a profile opened; Back restores it
+  artistTools: false, // a listener's artist tools are open: the Artists view, reached from Me
 };
 
 /* ---------- Helpers ---------- */
@@ -195,6 +196,8 @@ const now = () => new Date().toISOString();
 const uid = p => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const me = () => (db.session && db.users[db.session]) || null;
 const artistById = id => db.artists.find(a => a.id === id) || null;
+// An artist account: signed up as an artist, or a listener whose claim or new profile was approved (artistId is set).
+const isArtistAccount = u => u.role === 'artist' || !!u.artistId;
 const live = a => a.tracks.filter(t => t.status === 'live' && t.id);
 const providerOf = u => PROVIDERS[u.taste.provider] || PROVIDERS.spotify;
 const providerOptions = sel => Object.entries(PROVIDERS).map(([k, p]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${p.name}</option>`).join('');
@@ -621,7 +624,8 @@ function viewArtists(u) {
   if (target && !target.verified) {
     html += claimFormHTML(target);
   } else {
-    const open = db.artists.filter(a => !a.verified);
+    // Profiles this user already has a claim on are listed in In review above, so they are not offered again here.
+    const open = db.artists.filter(a => !a.verified && !pending.some(c => c.type === 'claim' && c.artistId === a.id));
     html += `<h2>Claim an existing profile</h2>`;
     html += open.length ? open.map(a => `
       <div class="card"><div class="card-head">
@@ -662,9 +666,11 @@ function viewQueue() {
 function viewMe(u) {
   const genres = Object.entries(u.taste.genres);
   const picks = u.taste.artists.map(artistById).filter(Boolean);
+  const artist = isArtistAccount(u);
   return `
     <h1>Me</h1>
-    <div class="card"><strong>${esc(u.name)}</strong><div class="sub">${esc(u.email)} · ${u.role === 'artist' ? 'Artist account' : 'Listener account'}</div></div>
+    <div class="card"><strong>${esc(u.name)}</strong><div class="sub">${esc(u.email)} · ${artist ? 'Artist account' : 'Listener account'}</div></div>
+    ${artist ? '' : `<div class="card"><strong>Artist tools</strong><div class="sub">Are you a musician? Claim your profile or create one.</div><div class="row" style="margin-top:10px"><button class="btn ghost" data-act="artist-tools">Open artist tools</button></div></div>`}
     ${meInstallCardHTML()}
     <h2>Taste profile</h2>
     <p class="sub">This is what SideStage uses to rank Discover. Remove anything you don't want used.</p>
@@ -711,18 +717,25 @@ function reportSheet() {
 }
 
 function viewApp(u) {
-  const tabs = [['discover', 'Discover'], ['shortlist', 'Shortlist'], ['artists', 'Artists'], ['me', 'Me']];
+  const artist = isArtistAccount(u);
+  // Artist accounts get the Artists tab. Other accounts get three tabs, and reach the Artists view from Me as artist tools.
+  const tabs = artist
+    ? [['discover', 'Discover'], ['shortlist', 'Shortlist'], ['artists', 'Artists'], ['me', 'Me']]
+    : [['discover', 'Discover'], ['shortlist', 'Shortlist'], ['me', 'Me']];
+  const tools = !artist && ui.artistTools;   // a listener's artist tools replace the Me body; Me stays the current tab
+  const current = tools ? 'me' : ui.tab;
   const profile = ui.artistView ? artistById(ui.artistView) : null;   // an open profile replaces the tab body; the tab bar stays
   const body = profile ? viewArtist(u, profile)
-    : ui.tab === 'shortlist' ? viewShortlist(u)
-    : ui.tab === 'artists' ? viewArtists(u)
-    : ui.tab === 'me' ? viewMe(u)
+    : tools ? `<div style="margin-top:12px"><button class="btn ghost small" data-act="artist-tools-close">← Back</button></div>${viewArtists(u)}`
+    : current === 'shortlist' ? viewShortlist(u)
+    : current === 'artists' ? viewArtists(u)
+    : current === 'me' ? viewMe(u)
     : viewDiscover(u);
   return `
   <header class="top"><div class="logo">Side<b>Stage</b></div><span class="badge-demo">Demo catalog</span></header>
   ${body}
-  <nav class="bottom" aria-label="Main">
-    ${tabs.map(([id, label]) => `<button data-act="tab" data-tab="${esc(id)}" ${ui.tab === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}
+  <nav class="bottom" aria-label="Main" style="grid-template-columns:repeat(${tabs.length},1fr)">
+    ${tabs.map(([id, label]) => `<button data-act="tab" data-tab="${esc(id)}" ${current === id ? 'aria-current="page"' : ''}>${label}</button>`).join('')}
   </nav>`;
 }
 
@@ -754,7 +767,8 @@ const isIOSSafari = () => {
   const ua = navigator.userAgent;
   return isIOS() && /Safari/.test(ua) && /Version\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|FBAN|FBAV|Instagram|GSA/.test(ua);
 };
-const installTabOpen = () => { const u = me(); return !!(u && u.onboarded && !ui.editing && (ui.tab === 'discover' || ui.tab === 'me')); };
+// Not while a listener's artist-tools forms are open: a re-render would wipe the text typed in them.
+const installTabOpen = () => { const u = me(); return !!(u && u.onboarded && !ui.editing && !(ui.artistTools && !isArtistAccount(u)) && (ui.tab === 'discover' || ui.tab === 'me')); };
 function installRecorded() {
   if (installedThisVisit) return true;
   try {
@@ -852,7 +866,7 @@ function finishOnboarding() {
   u.taste.genres = next;
   u.taste.artists = [...ui.draftArtists];
   u.taste.provider = ui.draftProvider;
-  u.onboarded = true; ui.editing = false; ui.tab = 'discover'; ui.artistView = null;
+  u.onboarded = true; ui.editing = false; ui.tab = 'discover'; ui.artistView = null; ui.artistTools = false; ui.claimTarget = null;
   commitTop();
 }
 function saveTrack(trackId) {
@@ -940,9 +954,12 @@ function approveClaim(id) {
       bio: c.profile.bio || '', attention: 50, verified: true, ownerEmail: c.email, offer: null, tracks: [] };
     db.artists.push(a); owner.artistId = a.id;
   }
+  // A listener who approves their own claim or new profile lands on the Artists tab, where the studio opens.
+  if (db.session === owner.email) { ui.tab = 'artists'; ui.artistTools = false; ui.claimTarget = null; }
   c.status = 'approved';
   toast('Approved. The artist can now manage the profile in Artists.');
   commit();
+  if (db.session === owner.email) window.scrollTo({ top: 0 });
 }
 function rejectClaim(id) {
   const c = db.claims.find(x => x.id === id);
@@ -985,7 +1002,7 @@ function deleteAccount() {
   db.claims = db.claims.filter(c => c.email !== u.email);
   db.reports = db.reports.filter(r => r.byEmail !== u.email);
   delete db.users[u.email];
-  db.session = null; ui.tab = 'discover'; ui.editing = false; ui.artistView = null;
+  db.session = null; ui.tab = 'discover'; ui.editing = false; ui.artistView = null; ui.artistTools = false; ui.claimTarget = null;
   commit();
   toast('Account deleted.');
 }
@@ -1004,7 +1021,7 @@ async function signup(fd) {
     const hash = await hashPw(pw, salt);
     db.users[email] = { email, name, role, salt, hash, createdAt: now(), onboarded: false,
       taste: { genres: {}, artists: [], provider: 'spotify' }, saved: [], skipped: [], artistId: null };
-    db.session = email; ui.tab = 'discover'; ui.artistView = null;
+    db.session = email; ui.tab = 'discover'; ui.artistView = null; ui.artistTools = false; ui.claimTarget = null;
     startOnboarding(false);
   } catch (err) { showErr('auth-err', err.message); }
 }
@@ -1016,7 +1033,7 @@ async function signin(fd) {
     const ok = u && (await hashPw(pw, u.salt)) === u.hash;
     if (!ok) return showErr('auth-err', 'Email or password is incorrect.');
   } catch (err) { return showErr('auth-err', err.message); }
-  db.session = email; ui.tab = 'discover'; ui.artistView = null;
+  db.session = email; ui.tab = 'discover'; ui.artistView = null; ui.artistTools = false; ui.claimTarget = null;
   commitTop();
 }
 
@@ -1044,9 +1061,11 @@ const ACTIONS = {
     else ui.draftArtists.push(id);
     render();
   },
-  'tab': el => { stopPreview(); ui.tab = el.dataset.tab; ui.artistView = null; ui.reportTarget = null; render(); window.scrollTo({ top: 0 }); },
+  'tab': el => { stopPreview(); ui.tab = el.dataset.tab; ui.artistView = null; ui.artistTools = false; ui.claimTarget = null; ui.reportTarget = null; render(); window.scrollTo({ top: 0 }); },
+  'artist-tools': () => { ui.artistTools = true; ui.claimTarget = null; render(); window.scrollTo({ top: 0 }); },
+  'artist-tools-close': () => { ui.artistTools = false; ui.claimTarget = null; ui.tab = 'me'; render(); window.scrollTo({ top: 0 }); },
   'artist-open': el => { stopPreview(); ui.artistScrollY = window.scrollY; ui.artistView = el.dataset.artist; render(); window.scrollTo({ top: 0 }); },
-  'artist-close': () => { stopPreview(); ui.artistView = null; render(); window.scrollTo({ top: ui.artistScrollY }); },
+  'artist-close': () => { stopPreview(); ui.artistView = null; ui.artistTools = false; ui.claimTarget = null; render(); window.scrollTo({ top: ui.artistScrollY }); },
   'artist-clear-filter': () => { ui.genreFilter = null; ui.underratedOnly = false; render(); },
   'genre': el => { const g = el.dataset.g || null; ui.genreFilter = g === ui.genreFilter ? null : g; render(); },
   'underrated': () => { ui.underratedOnly = !ui.underratedOnly; render(); },
@@ -1069,7 +1088,7 @@ const ACTIONS = {
   'redo-onb': () => startOnboarding(true),
   'export': () => exportData(),
   'delete-account': () => deleteAccount(),
-  'signout': () => { stopPreview(); db.session = null; ui.editing = false; ui.tab = 'discover'; ui.artistView = null; commitTop(); },
+  'signout': () => { stopPreview(); db.session = null; ui.editing = false; ui.tab = 'discover'; ui.artistView = null; ui.artistTools = false; ui.claimTarget = null; commitTop(); },
   'pwa-install': () => installNow(),
   'pwa-dismiss': () => { rememberInstallDismissal(); render(); },
   'claim-open': el => { ui.claimTarget = el.dataset.id; render(); },
