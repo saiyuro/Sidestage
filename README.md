@@ -2,7 +2,7 @@
 
 Music discovery for underrated artists. SideStage is an installable web app: add it to your phone's home screen and it opens full-screen like an app. It keeps working offline after your first visit.
 
-**Open the app:** https://saiyuro.github.io/sidestage/
+**Open the app:** https://saiyuro.github.io/Sidestage/
 
 ## Install on iPhone
 
