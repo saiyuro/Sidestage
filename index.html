@@ -68,7 +68,10 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid v
 .why .why-title::before{content:none}
 .track{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg2);border-radius:12px;padding:10px 12px;margin-top:10px}
 .track-main{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
-.track-text{min-width:0;overflow-wrap:anywhere}
+.track-text{flex:1 1 0;min-width:0;overflow-wrap:anywhere}
+.track-text strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.track-text .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width: 419px){.track{flex-wrap:wrap}.track-main{flex:1 1 100%}.track>.btn{flex:1 1 100%}}
 .vinyl{position:relative;width:76px;height:76px;flex:0 0 auto;border-radius:50%;background:repeating-radial-gradient(circle at center,rgba(255,255,255,.08) 0 1px,transparent 1px 3px),#0d0a18;box-shadow:0 6px 16px rgba(0,0,0,.4);animation:vinyl-spin 10s linear infinite}
 .vinyl.is-playing{animation-duration:2s}
 .vinyl .label{position:absolute;inset:18px;border-radius:50%;overflow:hidden}
@@ -173,7 +176,7 @@ const now = () => new Date().toISOString();
 const uid = p => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const me = () => (db.session && db.users[db.session]) || null;
 const artistById = id => db.artists.find(a => a.id === id) || null;
-const live = a => a.tracks.filter(t => t.status === 'live');
+const live = a => a.tracks.filter(t => t.status === 'live' && t.id);
 const providerOf = u => PROVIDERS[u.taste.provider] || PROVIDERS.spotify;
 const providerOptions = sel => Object.entries(PROVIDERS).map(([k, p]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${p.name}</option>`).join('');
 const listenUrl = (p, a, t) => p.url(`${a.name} ${t.title}`);
@@ -352,19 +355,21 @@ function viewOnboarding() {
 
 /* Generated album art: the same key always gives the same cover. */
 function coverSVG(key, letter) {
+  const k = String(key ?? '');                           // a track with no id must not throw
   let h = 2166136261;                                    // FNV-1a hash of the key
-  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 16777619);
   h = h >>> 0;
   const hue1 = h % 360;
   const hue2 = (hue1 + 40 + ((h >>> 9) % 121)) % 360;    // 40 to 160 degrees from hue1
   const cx = 20 + ((h >>> 3) % 61);                      // translucent circle: centre and radius from the hash
   const cy = 20 + ((h >>> 11) % 41);
   const r = 10 + ((h >>> 17) % 23);
+  // The letter's baseline is at y 36 with no dy, so capitals sit above the spindle band (y 40 to 60).
   return `<svg viewBox="0 0 100 100">
-    <rect width="100" height="100" fill="hsl(${hue1} 55% 40% / 1)"/>
-    <rect y="62" width="100" height="38" fill="hsl(${hue2} 50% 28% / 1)"/>
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="hsl(${hue2} 85% 72% / .35)"/>
-    <text x="50" y="50" dy=".35em" text-anchor="middle" font-size="46" font-weight="800" fill="hsl(0 0% 100% / 1)">${esc(letter)}</text>
+    <rect width="100" height="100" fill="hsl(${hue1}, 55%, 40%)"/>
+    <rect y="62" width="100" height="38" fill="hsl(${hue2}, 50%, 28%)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="hsla(${hue2}, 85%, 72%, .35)"/>
+    <text x="50" y="36" text-anchor="middle" font-size="46" font-weight="800" fill="hsl(0, 0%, 100%)">${esc(letter)}</text>
   </svg>`;
 }
 
@@ -372,8 +377,16 @@ function cardHTML(a, u, reasons) {
   const t = live(a)[0];
   const saved = u.saved.some(s => s.trackId === t.id);
   const playing = ui.previewId === t.id;
+  // render() rebuilds the whole screen, which would otherwise restart every disc at 0 degrees. Each disc
+  // therefore starts with animation-delay set to the negative of Date.now() modulo its period. Its angle then
+  // depends only on the absolute time, so a rebuilt disc continues at the same angle. The periods match the CSS
+  // (2s playing, 10s idle).
+  const period = playing ? 2000 : 10000;
+  const phase = -(Date.now() % period);
   const p = providerOf(u);
-  const initial = (Array.from(String(a.name ?? ''))[0] || '').toUpperCase();
+  const name = String(a.name ?? '').trim();
+  const first = Array.from(name)[0] || '?';               // an empty name gives a question mark
+  const initial = Array.from(first.toUpperCase())[0];     // keep one character: 'ß' upper-cases to 'SS'
   return `
   <article class="card">
     <div class="card-head">
@@ -387,19 +400,19 @@ function cardHTML(a, u, reasons) {
     </ul>
     <div class="track">
       <div class="track-main">
-        <div class="vinyl${playing ? ' is-playing' : ''}" aria-hidden="true"><div class="label">${coverSVG(t.id, initial)}</div></div>
+        <div class="vinyl${playing ? ' is-playing' : ''}" style="animation-delay:${phase}ms" aria-hidden="true"><div class="label">${coverSVG(t.id, initial)}</div></div>
         <div class="track-text"><strong>${esc(t.title)}</strong><div class="sub">${fmt(t.seconds)}${t.previewUrl ? ' · artist preview' : ' · demo tone'}</div></div>
       </div>
-      <button class="btn ghost small" data-act="preview" data-id="${t.id}">${playing ? '■ Stop' : '▶ Preview'}</button>
+      <button class="btn ghost small" data-act="preview" data-id="${esc(t.id)}">${playing ? '■ Stop' : '▶ Preview'}</button>
     </div>
     ${a.offer ? `<div class="offer">Artist offer: ${esc(a.offer)}</div>` : ''}
     <div class="actions">
-      <button class="btn" data-act="save" data-id="${t.id}" ${saved ? 'disabled' : ''}>${saved ? 'Saved ✓' : '+ Save song'}</button>
+      <button class="btn" data-act="save" data-id="${esc(t.id)}" ${saved ? 'disabled' : ''}>${saved ? 'Saved ✓' : '+ Save song'}</button>
       <a class="btn ghost" href="${esc(listenUrl(p, a, t))}" target="_blank" rel="noopener">Listen on ${p.name}</a>
     </div>
     <div class="foot">
-      <button class="link" data-act="skip" data-artist="${a.id}">Not for me</button>
-      <button class="link" data-act="report-open" data-artist="${a.id}">Report</button>
+      <button class="link" data-act="skip" data-artist="${esc(a.id)}">Not for me</button>
+      <button class="link" data-act="report-open" data-artist="${esc(a.id)}">Report</button>
     </div>
   </article>`;
 }
@@ -441,10 +454,10 @@ function viewShortlist(u) {
       <article class="card">
         <div class="card-head">
           <div><strong>${esc(f.t.title)}</strong><div class="sub">${esc(f.a.name)} · ${fmt(f.t.seconds)}</div></div>
-          <button class="link" data-act="unsave" data-id="${f.t.id}">Remove</button>
+          <button class="link" data-act="unsave" data-id="${esc(f.t.id)}">Remove</button>
         </div>
         <div class="actions">
-          <button class="btn ghost" data-act="preview" data-id="${f.t.id}">${ui.previewId === f.t.id ? '■ Stop' : '▶ Preview'}</button>
+          <button class="btn ghost" data-act="preview" data-id="${esc(f.t.id)}">${ui.previewId === f.t.id ? '■ Stop' : '▶ Preview'}</button>
           <a class="btn ghost" href="${esc(listenUrl(providerOf(u), f.a, f.t))}" target="_blank" rel="noopener">Listen on ${providerOf(u).name}</a>
         </div>
       </article>`).join('')
@@ -553,7 +566,7 @@ function viewQueue() {
     <h3 style="margin-top:14px">Tracks awaiting rights review</h3>
     ${tracks.length ? tracks.map(({ a, t }) => `
       <div class="card"><strong>${esc(t.title)}</strong><div class="sub">${esc(a.name)}${t.previewUrl ? ' · preview link on file' : ''}</div>
-        <div class="row" style="margin-top:8px"><button class="btn small" data-act="mod-approve-track" data-id="${t.id}">Approve</button></div>
+        <div class="row" style="margin-top:8px"><button class="btn small" data-act="mod-approve-track" data-id="${esc(t.id)}">Approve</button></div>
       </div>`).join('') : '<div class="sub">Nothing pending.</div>'}
     <h3 style="margin-top:14px">Reports</h3>
     ${db.reports.length ? db.reports.map(r => {
