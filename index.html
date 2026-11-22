@@ -67,6 +67,15 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid v
 .why .why-title{color:var(--ink);font-weight:600;padding-left:0}
 .why .why-title::before{content:none}
 .track{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--bg2);border-radius:12px;padding:10px 12px;margin-top:10px}
+.track-main{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.track-text{min-width:0;overflow-wrap:anywhere}
+.vinyl{position:relative;width:76px;height:76px;flex:0 0 auto;border-radius:50%;background:repeating-radial-gradient(circle at center,rgba(255,255,255,.08) 0 1px,transparent 1px 3px),#0d0a18;box-shadow:0 6px 16px rgba(0,0,0,.4);animation:vinyl-spin 10s linear infinite}
+.vinyl.is-playing{animation-duration:2s}
+.vinyl .label{position:absolute;inset:18px;border-radius:50%;overflow:hidden}
+.vinyl .label svg{display:block;width:100%;height:100%}
+.vinyl::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#0d0a18;z-index:1}
+@keyframes vinyl-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.vinyl{animation:none}}
 .offer{margin-top:10px;font-size:.88rem;color:var(--accent2);background:#3a2a16;border-radius:10px;padding:8px 10px}
 .foot{display:flex;justify-content:space-between;margin-top:4px}
 .card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
@@ -341,11 +350,30 @@ function viewOnboarding() {
     <div style="text-align:center;margin-top:6px"><button class="link" data-act="onb-skip">${skip}</button></div>`;
 }
 
+/* Generated album art: the same key always gives the same cover. */
+function coverSVG(key, letter) {
+  let h = 2166136261;                                    // FNV-1a hash of the key
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  h = h >>> 0;
+  const hue1 = h % 360;
+  const hue2 = (hue1 + 40 + ((h >>> 9) % 121)) % 360;    // 40 to 160 degrees from hue1
+  const cx = 20 + ((h >>> 3) % 61);                      // translucent circle: centre and radius from the hash
+  const cy = 20 + ((h >>> 11) % 41);
+  const r = 10 + ((h >>> 17) % 23);
+  return `<svg viewBox="0 0 100 100">
+    <rect width="100" height="100" fill="hsl(${hue1} 55% 40% / 1)"/>
+    <rect y="62" width="100" height="38" fill="hsl(${hue2} 50% 28% / 1)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="hsl(${hue2} 85% 72% / .35)"/>
+    <text x="50" y="50" dy=".35em" text-anchor="middle" font-size="46" font-weight="800" fill="hsl(0 0% 100% / 1)">${esc(letter)}</text>
+  </svg>`;
+}
+
 function cardHTML(a, u, reasons) {
   const t = live(a)[0];
   const saved = u.saved.some(s => s.trackId === t.id);
   const playing = ui.previewId === t.id;
   const p = providerOf(u);
+  const initial = (Array.from(String(a.name ?? ''))[0] || '').toUpperCase();
   return `
   <article class="card">
     <div class="card-head">
@@ -358,7 +386,10 @@ function cardHTML(a, u, reasons) {
       ${reasons.map(r => `<li>${esc(r)}</li>`).join('')}
     </ul>
     <div class="track">
-      <div><strong>${esc(t.title)}</strong><div class="sub">${fmt(t.seconds)}${t.previewUrl ? ' · artist preview' : ' · demo tone'}</div></div>
+      <div class="track-main">
+        <div class="vinyl${playing ? ' is-playing' : ''}" aria-hidden="true"><div class="label">${coverSVG(t.id, initial)}</div></div>
+        <div class="track-text"><strong>${esc(t.title)}</strong><div class="sub">${fmt(t.seconds)}${t.previewUrl ? ' · artist preview' : ' · demo tone'}</div></div>
+      </div>
       <button class="btn ghost small" data-act="preview" data-id="${t.id}">${playing ? '■ Stop' : '▶ Preview'}</button>
     </div>
     ${a.offer ? `<div class="offer">Artist offer: ${esc(a.offer)}</div>` : ''}
